@@ -244,6 +244,16 @@ class SpaceChart {
       .attr("paint-order", "stroke")
       .text((d) => d);
 
+    vis.tooltip = vis.svg
+      .append("text")
+      .attr("x", spaceWidth - 10)
+      .attr("y", spaceHeight - 50)
+      .attr("text-anchor", "end")
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "20px")
+      .text("Use arrow keys to control");
+
     // the tooltip
     vis.tooltip = vis.svg
       .append("text")
