@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23FFD24A%22/></svg>">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Steam Dataset · Playable D3 Pac‑Man — Scatter + Grouped Stats (Pixel Glow)</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <!-- Pixel font for true arcade vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            /* Retro arcade palette */
+            --bg0:#0a0b10; --bg1:#0e1220;
+            --grid:#151a2b;
+            --ink:#e7f0ff; --muted:#9bb0d1;
+            --action:#ff66cc;  /* Action pink */
+            --indie:#00ffb3;   /* Indie mint */
+            --pac:#ffd24a; --pac-stroke:#fff0a6;
+        }
+        html, body { height:100%; margin:0; background:#000; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+        #wrap { display:grid; place-items:center; min-height:100%; }
+        .frame { position:relative; width:960px; }
+        .row { display:flex; gap:12px; }
+        /* Left = 2/3 scatter game; Right = 1/3 grouped bars */
+        #game { width:640px; height:720px; border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,.55); image-rendering:pixelated; }
+        #stats { width:308px; height:720px; border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,.55); image-rendering:pixelated; }
+
+        .hud { position:absolute; inset:10px auto auto 10px; color:var(--ink); font-weight:700; display:flex; gap:10px; align-items:center; font-family:"Press Start 2P", system-ui, monospace; font-size:10px; }
+        .hud .badge{ padding:2px 8px; border-radius:6px; font-size:12px; background:#121629; box-shadow:0 0 0 1px #23324d inset; }
+        .controls { position:absolute; right:10px; top:10px; display:flex; gap:8px; }
+        .hint { position:absolute; left:10px; bottom:10px; color:var(--muted); font-size:12px; }
+        .legend { position:absolute; right:10px; bottom:10px; color:var(--muted); font-size:12px; }
+
+        .btn { appearance:none; border:0; background:#12192b; color:#cfe1ff; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 0 0 1px #24314a inset; }
+        .btn.debug { opacity:.85 }
+        .btn {   //adding
+        font-family: "Press Start 2P", system-ui, monospace;
+            font-size: 14px;
+            line-height: 1;
+            text-align: center;
+        }
+        .tooltip { position:fixed; pointer-events:none; background:rgba(10,16,28,.75); color:#dfe9ff; padding:8px 10px; border:1px solid #2b3b5a; border-radius:8px; font-size:12px; box-shadow:0 8px 22px rgba(0,0,0,.45); opacity:0; transform:translateY(-6px); transition:opacity .12s ease, transform .12s ease; white-space:nowrap; }
+        .pix { font-family:"Press Start 2P", system-ui, monospace; letter-spacing:0; }
+    </style>
+</head>
+<body>
+<div id="wrap">
+    <div class="frame">
+        <div class="hud">
+            <span class="pix">TOTAL</span>
+            <span id="scoreTotal" class="badge">0</span>
+            <span class="pix">ACTION</span>
+            <span id="scoreAction" class="badge" style="color:#230017; background:var(--action); box-shadow:0 0 12px var(--action);">0</span>
+            <span class="pix">INDIE</span>
+            <span id="scoreIndie" class="badge" style="color:#001a12; background:var(--indie); box-shadow:0 0 12px var(--indie);">0</span>
+        </div>
+        <div class="controls">
+            <input id="file" type="file" accept=".csv" class="btn" title="Select steam_games.csv" style="display:none"/>
+            <!--            <button id="reset" class="btn">Restart</button>-->
+            <!--            <button id="pause" class="btn">Pause</button>-->
+            <!--            <button id="reset" class="btn" title="Restart">🔁</button>-->
+            <!--            <button id="pause" class="btn" title="Pause / Resume">⏸️</button>-->
+            <!--            <button id="debug" class="btn debug" title="Log grouped values to console">⚙️</button>-->
+            <button id="reset" class="btn pix-icon" title="Restart">
+                <span class="pix">↻</span>
+            </button>
+            <button id="pause" class="btn pix-icon" title="Pause / Resume">
+                <span id="pauseIcon" class="pix">⏸</span>
+            </button>
+            <button id="debug" class="btn pix-icon debug" title="Log grouped values to console">
+                <span class="pix">⚙</span>
+            </button>
+
+        </div>
+        <div class="hint">Arrow Keys / WASD · Hover for details · Eat Action/Indie to score</div>
+        <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
+
+        <div class="row">
+            <!-- Left: Scatter (price vs positive %) -->
+            <svg id="game" viewBox="0 0 640 720"></svg>
+            <!-- Right: Grouped vertical bars (Price/Rating/Reviews × Action/Indie) -->
+            <svg id="stats" viewBox="0 0 308 720"></svg>
+        </div>
+
+        <div id="tooltip" class="tooltip"></div>
+        <div id="tooltipBar" class="tooltip"></div>
+    </div>
+</div>
+
+<script>
+    ;(() => {
+        // === Dimensions ===
+        const GW = 640, GH = 720; // game (scatter)
+        const SW = 308, SH = 720; // stats (right panel)
+
+        // === Roots & tooltips ===
+        const svg = d3.select('#game');
+        const svgStats = d3.select('#stats');
+        const tooltip = d3.select('#tooltip');
+        const tooltipBar = d3.select('#tooltipBar');
+
+        // === Common helpers ===
+        const fillFor = c => c==='Action' ? 'var(--action)' : 'var(--indie)';
+        const q = sel => document.querySelector(sel);
+
+        // === Scatter background (gradient + grid) ===
+        const defs = svg.append('defs');
+        const glowPac = defs.append('filter').attr('id','glowPac');
+        glowPac.append('feDropShadow')
+            .attr('dx',0)
+            .attr('dy',0)
+            .attr('stdDeviation',1.2)
+            .attr('flood-color','var(--pac)')
+            .attr('flood-opacity',.9);
+
+        const grad = defs.append('linearGradient').attr('id','bg').attr('x1','0%').attr('y1','0%').attr('x2','100%').attr('y2','100%');
+        grad.append('stop').attr('offset','0%').attr('stop-color','var(--bg0)');
+        grad.append('stop').attr('offset','100%').attr('stop-color','var(--bg1)');
+        const glowMint = defs.append('filter').attr('id','glowMint');
+        glowMint.append('feDropShadow').attr('dx',0).attr('dy',0).attr('stdDeviation',1.5).attr('flood-color','var(--indie)').attr('flood-opacity',.85);
+        const glowPink = defs.append('filter').attr('id','glowPink');
+        glowPink.append('feDropShadow').attr('dx',0).attr('dy',0).attr('stdDeviation',1.5).attr('flood-color','var(--action)').attr('flood-opacity',.85);
+
+        svg.append('rect').attr('x',0).attr('y',0).attr('width',GW).attr('height',GH).attr('fill','url(#bg)');
+        const gGrid = svg.append('g');
+        for (let x=8; x<GW; x+=16) gGrid.append('line').attr('x1',x).attr('y1',0).attr('x2',x).attr('y2',GH).attr('stroke','var(--grid)').attr('stroke-opacity',.25).attr('shape-rendering','crispEdges');
+        for (let y=8; y<GH; y+=16) gGrid.append('line').attr('x1',0).attr('y1',y).attr('x2',GW).attr('y2',y).attr('stroke','var(--grid)').attr('stroke-opacity',.25).attr('shape-rendering','crispEdges');
+
+        // === Scatter plot groups ===
+        const margin = {l:48, r:18, t:70, b:42};
+        const innerW = GW - margin.l - margin.r;
+        const innerH = GH - margin.t - margin.b;
+        const gPlot = svg.append('g').attr('transform',`translate(${margin.l},${margin.t})`);
+
+        const gXAxis = gPlot.append('g').attr('transform',`translate(0,${innerH})`);
+        const gYAxis = gPlot.append('g');
+        const gPellets = gPlot.append('g');
+        gPlot.append('g').attr('id','bursts');
+        const gPac = gPlot.append('g');
+
+        // === Pac‑Man ===
+        const pac = { x: innerW/2|0, y: innerH/2|0, r: 12, dir: 'right', speed: 2.6, mouth: 0.2, phase: 0 };
+        let started = false;
+        const pacPath = gPac.append('path')
+            .attr('fill','var(--pac)')
+            .attr('stroke','var(--pac-stroke)')
+            .attr('stroke-width',1.1)
+            .attr('shape-rendering','crispEdges');
+
+        // === HUD ===
+        const scoreEl = { total: q('#scoreTotal'), action: q('#scoreAction'), indie: q('#scoreIndie') };
+        let score = { total:0, Action:0, Indie:0 };
+
+        // === Keyboard ===
+        const dirs = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down', a:'left', d:'right', w:'up', s:'down', A:'left', D:'right', W:'up', S:'down' };
+        addEventListener('keydown', e => {
+            const nd = dirs[e.key];
+            if (nd) {
+                pac.dir = nd;
+                started = true;
+            }
+        });
+
+        // === File input ===
+        d3.select('#file').on('change', (e)=>{ const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload = ev => loadFromCsvString(ev.target.result); r.readAsText(f); });
+
+        // Autoload if present
+        d3.csv('data/steam_games.csv').then(loadData, ()=>{});
+
+        function loadFromCsvString(text){ loadData(d3.csvParse(text)); }
+
+        function pickCategory(genres){ if (!genres) return null; const has=g=>genres.includes(g); if (has('Action')) return 'Action'; if (has('Indie')) return 'Indie'; return null; }
+
+        // === Right panel (stats) infrastructure ===
+        // IMPORTANT: paint order matters in SVG. Background FIRST, then content groups.
+        const statsDefs = svgStats.append('defs');
+        const sGrad = statsDefs.append('linearGradient').attr('id','bgS').attr('x1','0%').attr('y1','0%').attr('x2','0%').attr('y2','100%');
+        sGrad.append('stop').attr('offset','0%').attr('stop-color','var(--bg1)');
+        sGrad.append('stop').attr('offset','100%').attr('stop-color','var(--bg0)');
+        // background and pixel grid FIRST
+        svgStats.append('rect').attr('x',0).attr('y',0).attr('width',SW).attr('height',SH).attr('fill','url(#bgS)');
+        for (let x=8; x<SW; x+=16) svgStats.append('rect').attr('x',x).attr('y',0).attr('width',1).attr('height',SH).attr('fill','#10182a').attr('opacity',.18);
+        for (let y=8; y<SH; y+=16) svgStats.append('rect').attr('x',0).attr('y',y).attr('width',SW).attr('height',1).attr('fill','#10182a').attr('opacity',.18);
+        // THEN the content root so it stays on top of the background
+        const gStatsRoot = svgStats.append('g');
+
+        // Config for three groups (non-uniform, arcade-like vertical layout)
+        const groups = [
+            { key:'price',   title:'PRICE',   accessor: d=>d.price,           agg:'avg', unit:v=>`$${v.toFixed(2)}` },
+            { key:'rating',  title:'RATING',  accessor: d=>d.rating,          agg:'avg', unit:v=>`${v.toFixed(1)}%` },
+            { key:'reviews', title:'REVIEWS', accessor: d=>d.total_reviews,   agg:'sum', unit:v=>`${v}` },
+        ];
+
+        const pad = {t:30, r:18, b:24, l:18};
+        const slotH = (SH - pad.t - pad.b) / groups.length; // nominal height per group
+        const barGap = 12; // gap between action/indie bars inside a group
+
+        // Slight non-uniform offsets for arcade feel
+        const yOffsets = [ -8, 4, 12 ];
+
+        // Pre-build groups: titles, baselines, bars and hover layers
+        const gRows = gStatsRoot.selectAll('g.row').data(groups).enter().append('g')
+            .attr('class','row')
+            .attr('transform', (d,i)=>`translate(${pad.l},${pad.t + i*slotH + yOffsets[i]})`);
+
+        // group title (pixel font)
+        gRows.append('text').attr('class','gtitle pix').attr('x', 0).attr('y', slotH - 6).attr('fill','#cdd8f6').attr('font-size',10).text(d=>d.title);
+
+        // inner drawing area per group (moved slightly down to give the title space)
+        const gArea = gRows.append('g').attr('class','area').attr('transform','translate(0,16)');
+
+        // baseline box
+        gArea.append('rect').attr('x',0).attr('y',0).attr('width', SW - pad.l - pad.r).attr('height', slotH-34)
+            .attr('fill','#0e1422').attr('opacity',.68).attr('stroke','#121a2c').attr('shape-rendering','crispEdges');
+
+        // prepare two bars per group (local coordinates per area)
+        gArea.each(function(d){
+            const w = SW - pad.l - pad.r;
+            const h = slotH - 34;
+            const bw = (w - barGap) / 1.9; // slightly wider bars
+            const g = d3.select(this);
+            const stub = 20; // initial visible stub height
+            // Action bar (left)
+            g.append('rect').attr('class',`bar action ${d.key}`).attr('x',0).attr('y',h-stub).attr('width',bw).attr('height',stub).attr('fill','var(--action)')
+                .attr('opacity',0.8)
+                .style('filter','drop-shadow(0 0 6px rgba(255,102,204,.35))');
+            // Indie bar (right)
+            g.append('rect').attr('class',`bar indie ${d.key}`).attr('x',bw+barGap).attr('y',h-stub).attr('width',bw).attr('height',stub).attr('fill','var(--indie)')
+                .attr('opacity',0.8)
+                .style('filter','drop-shadow(0 0 6px rgba(0,255,179,.35))');
+            // Hover layers for tooltip
+            g.append('rect').attr('class',`hover action ${d.key}`).attr('x',0).attr('y',0).attr('width',bw).attr('height',h).attr('fill','transparent')
+                .on('mousemove', (ev)=> showBarTip(ev, d, 'Action'))
+                .on('mouseleave', hideBarTip);
+            g.append('rect').attr('class',`hover indie ${d.key}`).attr('x',bw+barGap).attr('y',0).attr('width',bw).attr('height',h).attr('fill','transparent')
+                .on('mousemove', (ev)=> showBarTip(ev, d, 'Indie'))
+                .on('mouseleave', hideBarTip);
+        });
+
+        // --- Define initStats so calls are valid (no-op; panel prebuilt above) ---
+        function initStats(){ return true; }
+
+        function showBarTip(ev, cfg, cat){
+            const vals = computeGrouped();
+            const v = vals[cfg.key][cat] || 0;
+            tooltipBar.html(`${cfg.title}: <b>${cat}</b> = ${cfg.unit(v)}`)
+                .style('left',(ev.pageX+10)+'px')
+                .style('top',(ev.pageY+10)+'px')
+                .style('opacity',1)
+                .style('transform','translateY(0)');
+        }
+        function hideBarTip(){ tooltipBar.style('opacity',0).style('transform','translateY(-6px)'); }
+
+        // Eaten buckets for grouped stats (right panel)
+        const eatenBy = { Action: [], Indie: [] };
+
+        function computeGrouped(){
+            const A = eatenBy.Action, I = eatenBy.Indie;
+            const avg = (arr, acc) => arr.length? d3.mean(arr, acc) : 0;
+            const sum = (arr, acc) => arr.length? d3.sum(arr, acc) : 0;
+            return {
+                price:   { Action: avg(A, d=>d.price),        Indie: avg(I, d=>d.price) },
+                rating:  { Action: avg(A, d=>d.rating),       Indie: avg(I, d=>d.rating) },
+                reviews: { Action: sum(A, d=>d.total_reviews),Indie: sum(I, d=>d.total_reviews) }
+            };
+        }
+
+        function updateStats(){
+            const vals = computeGrouped();
+            const domains = {
+                price:   Math.max(5,  (Math.max(vals.price.Action,   vals.price.Indie)   || 0) * 1.6,  10),
+                rating:  100,
+                reviews: Math.max(50, (Math.max(vals.reviews.Action, vals.reviews.Indie) || 0) * 1.2, 200)
+            };
+
+            // For each row (group), update local bars using local coords
+            svgStats.selectAll('g.row').each(function(cfg){
+                const area = d3.select(this).select('g.area');
+                const w = SW - pad.l - pad.r;
+                const h = slotH - 34;
+                const yScale = d3.scaleLinear().domain([0, domains[cfg.key]]).range([h, 0]);
+                const valA = vals[cfg.key].Action || 0;
+                const valI = vals[cfg.key].Indie  || 0;
+                const hA = Math.max(20, h - yScale(valA)); // keep at least stub height
+                const hI = Math.max(20, h - yScale(valI));
+
+                // action bar (left)
+                const barA = area.select(`rect.bar.action.${cfg.key}`);
+                barA.transition().duration(300)
+                    .attr('y', h - hA)
+                    .attr('height', hA)
+                    .attr('opacity', valA>0? 1 : 0.8);
+
+                // indie bar (right)
+                const barI = area.select(`rect.bar.indie.${cfg.key}`);
+                barI.transition().duration(300)
+                    .attr('y', h - hI)
+                    .attr('height', hI)
+                    .attr('opacity', valI>0? 1 : 0.8);
+            });
+        }
+
+        // Flash a single bar with category color (precise, non-white electric pulse)
+        function flashBar(cat, key){
+            const row = svgStats.selectAll('g.row').filter(d=>d.key===key);
+            const area = row.select('g.area');
+            const sel = area.select(`rect.bar.${cat.toLowerCase()}.${key}`);
+            const glow = cat==='Action' ? 'var(--action)' : 'var(--indie)';
+            sel.interrupt()
+                .transition().duration(90)
+                .attr('opacity', 1)
+                .style('filter', `drop-shadow(0 0 16px ${glow})`)
+                .transition().duration(320)
+                .attr('opacity', 0.98)
+                .style('filter', `drop-shadow(0 0 6px ${glow}66)`);
+        }
+
+        function flashCategory(cat){ ['price','rating','reviews'].forEach(k=>flashBar(cat, k)); }
+
+        function loadData(rows){
+            // --- Parse rows ---
+            const items = [];
+            for(const d of rows){
+                let genres=[]; if (typeof d.genres==='string'){ try{ genres=JSON.parse(d.genres.replace(/'/g,'"')); }catch{ genres=[]; } }
+                const cat = pickCategory(genres); if(!cat) continue;
+                const reviews = +d.total_reviews || 0;
+                const price = +d["price_initial (USD)"] || +d.price_initial || 0;
+                const rating = +d.positive_percentual || 0;
+                items.push({ name:d.name||'Unknown', genres, cat, total_reviews:reviews, price, rating, developers:d.developers, publishers:d.publishers });
+            }
+
+            const data = items.slice(0, 350);
+
+            // --- Scales for scatter ---
+            const x = d3.scaleLinear().domain([0, Math.max(5, d3.max(data, d=>d.price)||5)]).range([0, innerW]);
+            const y = d3.scaleLinear().domain([0, 100]).range([innerH, 0]);
+            const s = d3.scaleSqrt().domain(d3.extent(data, d=>d.total_reviews)).range([8, 22]);
+
+            const xAxis = d3.axisBottom(x).ticks(8).tickSizeOuter(0);
+            const yAxis = d3.axisLeft(y).ticks(6).tickSizeOuter(0);
+            gXAxis.call(xAxis).call(g=>g.selectAll('path,line').attr('shape-rendering','crispEdges').attr('stroke','#2a3758')).call(g=>g.selectAll('text').attr('fill','#98a9cc'));
+            gYAxis.call(yAxis).call(g=>g.selectAll('path,line').attr('shape-rendering','crispEdges').attr('stroke','#2a3758')).call(g=>g.selectAll('text').attr('fill','#98a9cc'));
+            gPlot.append('text').attr('class','pix').attr('x', innerW).attr('y', innerH+30).attr('text-anchor','end').attr('fill','#cdd8f6').attr('font-size',10).text('PRICE (USD)');
+            gPlot.append('text').attr('class','pix').attr('x', -10).attr('y', -10).attr('text-anchor','start').attr('fill','#cdd8f6').attr('font-size',10).text('POSITIVE %');
+
+            // --- Nodes mapped to scatter positions ---
+            const nodes = data.map(d => ({
+                ...d,
+                x: Math.round(x(d.price)),
+                y: Math.round(y(d.rating)),
+                s: Math.round(s(d.total_reviews)),
+                eaten:false
+            }));
+
+            // --- Draw pellets (pixel squares) ---
+            const pellets = gPellets.selectAll('rect.pellet')
+                .data(nodes, d=>d.name + d.cat)
+                .join('rect')
+                .attr('class','pellet')
+                .attr('width', d=>d.s).attr('height', d=>d.s)
+                .attr('x', d=> Math.round(d.x - d.s/2))
+                .attr('y', d=> Math.round(d.y - d.s/2))
+                .attr('fill', d=>fillFor(d.cat))
+                .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
+                .attr('shape-rendering','crispEdges')
+                .attr('opacity', .98)
+                .on('mousemove', (ev, d) => {
+                    tooltip.html(`<div class='pix' style='font-size:10px'><b>${d.name}</b><br>Price: $${d.price.toFixed(2)}<br>Positive: ${d.rating.toFixed(1)}%<br>Reviews: ${d.total_reviews}</div>`)
+                        .style('left', (ev.pageX + 10) + 'px')
+                        .style('top', (ev.pageY + 10) + 'px')
+                        .style('opacity', 1)
+                        .style('transform','translateY(0)');
+                })
+                .on('mouseleave', () => tooltip.style('opacity', 0).style('transform','translateY(-6px)'));
+
+            // --- Reset & HUD & PAUSE---
+            // q('#reset').onclick = () => reset();
+            // function reset(){ score={total:0,Action:0,Indie:0}; updHUD(); eatenBy.Action.length=0; eatenBy.Indie.length=0; pellets.attr('display',null); pac.x=innerW/2|0; pac.y=innerH/2|0; pac.dir='right'; pac.phase=0; updateStats(); }
+            //
+            // q('#pause').onclick = () => {
+            //     paused = !paused;
+            //     q('#pause').textContent = paused ? 'Resume' : 'Pause';
+            // };
+            // --- Reset & HUD & Pause ---
+            q('#reset').onclick = () => reset();
+
+            function reset() {
+                score = { total: 0, Action: 0, Indie: 0 };
+                updHUD();
+                eatenBy.Action.length = 0;
+                eatenBy.Indie.length = 0;
+                pellets.attr('display', null);
+                pac.x = innerW / 2 | 0;
+                pac.y = innerH / 2 | 0;
+                pac.dir = 'right';
+                pac.phase = 0;
+                updateStats();
+                paused = false;
+                q('#pauseIcon').textContent = '⏸';
+            }
+
+            q('#pause').onclick = () => {
+                paused = !paused;
+                q('#pauseIcon').textContent = paused ? '▶' : '⏸';
+            };
+
+
+
+            // --- Game loop ---
+            let last = performance.now();
+            const eatPad = 2;
+
+            let paused = false;
+
+            const gameLoop = d3.timer((now) => {
+                if (!started) {
+                    pacPath.attr('d', pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir));
+                    return;
+                }
+                if (paused) {
+                    pacPath.attr('opacity', 0.6);
+                    return;
+                } else {
+                    pacPath.attr('opacity', 1);
+                }
+
+                const dt = Math.min(32, now - last);
+                last = now;
+
+                // Pixel‑y chew
+                pac.phase += dt * 0.012; const chew = (Math.sin(pac.phase)*0.5+0.5); pac.mouth = Math.round(chew*6)/6 * 0.4;
+                const v = pac.speed * (dt/16.6667);
+                if (pac.dir==='left') pac.x -= v; if (pac.dir==='right') pac.x += v; if (pac.dir==='up') pac.y -= v; if (pac.dir==='down') pac.y += v;
+                const pad = 6; pac.x = Math.max(pad, Math.min(innerW-pad, pac.x))|0; pac.y = Math.max(pad, Math.min(innerH-pad, pac.y))|0;
+
+                // Eat detection
+                pellets.each(function(d){ if (d.eaten) return; const cx=d.x, cy=d.y, rr=(pac.r + d.s/2 + eatPad)**2; const dx=pac.x-cx, dy=pac.y-cy; if (dx*dx + dy*dy <= rr){ d.eaten=true; score.total++; score[d.cat]++; eatenBy[d.cat].push(d); updHUD(); d3.select(this).attr('display','none'); burst(cx, cy, d.cat); pacFlash(); updateStats(); flashCategory(d.cat); }});
+
+                pacPath.attr('d', pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir));
+            });
+
+            // Init stats once after data loads
+            initStats();
+            updateStats();
+        }
+
+        // === Effects (bursts & pac) ===
+        function burst(x,y,cat){
+            const color = fillFor(cat);
+            const N = 9; const data = d3.range(N).map(()=>({x,y,a:Math.random()*Math.PI*2,v:1+Math.random()*2,s:2+Math.random()*2}));
+            const bursts = d3.select('#game').select('#bursts').selectAll(null).data(data).enter().append('rect')
+                .attr('x', d=>x-d.s/2).attr('y', d=>y-d.s/2).attr('width', d=>d.s).attr('height', d=>d.s)
+                .attr('fill', color).attr('opacity', .95).attr('shape-rendering','crispEdges');
+            bursts.transition().duration(300)
+                .attr('x', d=> x + Math.cos(d.a)*d.v*18)
+                .attr('y', d=> y + Math.sin(d.a)*d.v*18)
+                .attr('opacity', 0)
+                .remove();
+        }
+        function pacFlash(){ d3.select('#game path').interrupt().transition().duration(80).attr('stroke-width',2).transition().duration(140).attr('stroke-width',1.1); }
+
+        function baseAngle(dir){ return dir==='right'?0: dir==='left'?Math.PI: dir==='up'? -Math.PI/2: Math.PI/2; }
+        function pacPathD(x,y,r,open,dir){ const base=baseAngle(dir); const m=Math.max(.06,Math.min(.44,open)); const a0=base+m,a1=base-m; const x0=(x+r*Math.cos(a0))|0,y0=(y+r*Math.sin(a0))|0; const x1=(x+r*Math.cos(a1))|0,y1=(y+r*Math.sin(a1))|0; return `M ${x|0} ${y|0} L ${x0} ${y0} A ${r} ${r} 0 1 1 ${x1} ${y1} Z`; }
+
+        function updHUD(){ scoreEl.total.textContent=score.total; scoreEl.action.textContent=score.Action; scoreEl.indie.textContent=score.Indie; }
+
+        // === Debug button ===
+        q('#debug').onclick = () => {
+            const vals = computeGrouped();
+            console.table({
+                price_Action: vals.price.Action.toFixed(2), price_Indie: vals.price.Indie.toFixed(2),
+                rating_Action: vals.rating.Action.toFixed(1), rating_Indie: vals.rating.Indie.toFixed(1),
+                reviews_Action: vals.reviews.Action, reviews_Indie: vals.reviews.Indie
+            });
+            alert('Grouped values printed to console');
+        };
+
+        // === Minimal runtime self‑tests (console) ===
+        console.assert(document.querySelector('#game'), '[Self‑test] scatter svg exists');
+        console.assert(document.querySelector('#stats'), '[Self‑test] stats svg exists');
+
+        // Expose debug helpers to window for console usage
+        window.computeGrouped = computeGrouped;
+        window.updateStats = updateStats;
+    })();
+</script>
+</body>
+</html>
