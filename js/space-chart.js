@@ -53,7 +53,7 @@ function parseGenres(str) {
 // TODO: if someone uses this too, move to main
 
 const spaceHeight = 700;
-const spaceWidth = 800;
+const spaceWidth = 1200;
 const spaceMargin = { top: 20, right: 40, bottom: 20, left: 40 };
 const spacePadding = 80;
 let topGenres = [
@@ -85,7 +85,11 @@ const clusterCenters = {
   Racing: { x: 250, y: 90 },
 };
 
-const speed = 10;
+const pressed = {};
+
+const acceleration = 0.1;
+const friction = 0.92;
+const maxSpeed = 15;
 
 class SpaceChart {
   constructor(data) {
@@ -120,7 +124,7 @@ class SpaceChart {
         d3.min(vis.nodes, (d) => d.playerCount),
         d3.max(vis.nodes, (d) => d.playerCount),
       ])
-      .range([1, 100]); //TODO: tweak if needed
+      .range([3, 100]); //TODO: tweak if needed
 
     const backgroundSizeScale = d3
       .scaleSqrt()
@@ -149,6 +153,27 @@ class SpaceChart {
       .attr("height", spaceHeight)
       .style("background", "#222"); // maybe do an actual space image in the future
 
+    vis.g = vis.svg.append("g");
+
+    vis.cameraScale = 13; // always zoomed-in
+
+    vis.updateCamera = function () {
+      // We want the ship centered
+      const cx = spaceWidth / 2;
+      const cy = spaceHeight / 2;
+
+      // Move galaxy so that ship is at the center
+      const tx = cx - spaceship.x * vis.cameraScale;
+      const ty = cy - spaceship.y * vis.cameraScale;
+
+      vis.g.attr(
+        "transform",
+        `translate(${tx}, ${ty}) scale(${vis.cameraScale})`
+      );
+
+      vis.updateTooltip();
+    };
+
     // use force simulation to layout the nodes
     // pull to cluster centre x
     // pull to cluster centre y
@@ -165,8 +190,12 @@ class SpaceChart {
         d3.forceCollide((d) => vis.sizeScale(d.playerCount) + 2)
       );
 
-    const nodeRect = vis.svg
-      .selectAll("rect.node-bg")
+    vis.g.append("g").attr("class", "nodeRects");
+    vis.g.append("g").attr("class", "nodeCircles");
+
+    const nodeRect = vis.g
+      .select("g.nodeRects")
+      .selectAll("rect")
       .data(vis.nodes)
       .join("rect")
       .attr("class", "node-bg")
@@ -178,9 +207,11 @@ class SpaceChart {
         const genre = d.genres.find((g) => topGenres.includes(g));
         return genreColorScale(genre);
       });
+
     // draw nodes then assign them to the simulation points
-    const nodeCircle = vis.svg
-      .selectAll("circle.node")
+    const nodeCircle = vis.g
+      .select("g.nodeCircles")
+      .selectAll("circle")
       .data(vis.nodes)
       .join("circle")
       .attr("r", (d) => vis.sizeScale(d.playerCount))
@@ -196,7 +227,7 @@ class SpaceChart {
 
     const nodesByCluster = d3.group(vis.nodes, (d) => d.cluster);
 
-    const clusterGroup = vis.svg
+    const clusterGroup = vis.g
       .selectAll("g.cluster")
       .data(topGenres)
       .join("g")
@@ -244,84 +275,159 @@ class SpaceChart {
       .attr("paint-order", "stroke")
       .text((d) => d);
 
-    vis.tooltip = vis.svg
-      .append("text")
-      .attr("x", spaceWidth - 10)
-      .attr("y", spaceHeight - 50)
-      .attr("text-anchor", "end")
-      .attr("fill", "#fff")
-      .attr("font-family", "sans-serif")
-      .attr("font-size", "20px")
-      .text("Use arrow keys to control");
+    vis.tooltipGroup = vis.svg
+      .append("g")
+      .attr("transform", `translate(${spaceWidth / 2}, ${spaceHeight - 40})`);
 
-    // the tooltip
-    vis.tooltip = vis.svg
+    vis.tooltipBg = vis.tooltipGroup
+      .append("rect")
+      .attr("x", -100)
+      .attr("y", -20)
+      .attr("width", 200)
+      .attr("height", 40)
+      .attr("rx", 10)
+      .attr("ry", 10)
+      .attr("fill", "rgba(0,0,0,0.7)"); // semi-transparent dark background
+
+    vis.tooltipText = vis.tooltipGroup
       .append("text")
-      .attr("x", spaceWidth - 10)
-      .attr("y", spaceHeight - 10)
-      .attr("text-anchor", "end")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
       .attr("fill", "#fff")
       .attr("font-family", "sans-serif")
-      .attr("font-size", "20px")
-      .text("Hover a node...");
+      .attr("font-size", "20px");
 
     // draw teh spaceship
     vis.spaceshipGraphic = vis.svg
       .append("rect")
-      .attr("x", spaceship.x - spaceship.w / 2)
-      .attr("y", spaceship.y - spaceship.h / 2)
+      // .attr("x", spaceship.x - spaceship.w / 2)
+      // .attr("y", spaceship.y - spaceship.h / 2)
       .attr("width", spaceship.w)
       .attr("height", spaceship.h)
       .attr("fill", "#fff");
 
+    vis.spaceshipGraphic
+      .attr("x", spaceWidth / 2 - spaceship.w / 2)
+      .attr("y", spaceHeight / 2 - spaceship.h / 2);
+
+    spaceship.vx = 0;
+    spaceship.vy = 0;
+
     d3.select("body").on("keydown", (event) => {
-      switch (event.key) {
-        case "ArrowUp":
-          spaceship.y -= speed;
-          break;
-        case "ArrowDown":
-          spaceship.y += speed;
-          break;
-        case "ArrowLeft":
-          spaceship.x -= speed;
-          break;
-        case "ArrowRight":
-          spaceship.x += speed;
-          break;
+      pressed[event.key] = true; // mark key as held
+    });
+
+    d3.select("body").on("keyup", (event) => {
+      if (holdTime[event.key] !== undefined) {
+        holdTime[event.key] = 0; // reset acceleration
+      }
+      pressed[event.key] = false; // mark key as released
+    });
+
+    // for smooth acceleration
+    const holdTime = {
+      ArrowUp: 0,
+      ArrowDown: 0,
+      ArrowLeft: 0,
+      ArrowRight: 0,
+    };
+
+    d3.interval(() => {
+      let dx = 0;
+      let dy = 0;
+
+      for (const key in holdTime) {
+        if (pressed[key]) {
+          holdTime[key] += 1; // 1 tick = 16ms
+        } else {
+          holdTime[key] = 0;
+        }
       }
 
-      // Update spaceship position
-      vis.spaceshipGraphic
-        .attr("x", spaceship.x - spaceship.w / 2)
-        .attr("y", spaceship.y - spaceship.h / 2);
+      if (pressed["ArrowUp"]) dy -= acceleration;
+      if (pressed["ArrowDown"]) dy += acceleration;
+      if (pressed["ArrowLeft"]) dx -= acceleration;
+      if (pressed["ArrowRight"]) dx += acceleration;
 
-      // Update tooltip
-      vis.updateTooltip();
-    });
+      // normalize diagonal movement (so speed is consistent)
+      if (dx !== 0 && dy !== 0) {
+        const s = Math.sqrt(0.5); // ~0.707
+        dx *= s;
+        dy *= s;
+      }
+
+      spaceship.vx += dx;
+      spaceship.vy += dy;
+
+      spaceship.vx *= friction;
+      spaceship.vy *= friction;
+
+      const speed = Math.sqrt(spaceship.vx ** 2 + spaceship.vy ** 2);
+      if (speed > maxSpeed) {
+        spaceship.vx = (spaceship.vx / speed) * maxSpeed;
+        spaceship.vy = (spaceship.vy / speed) * maxSpeed;
+      }
+
+      // apply movement
+      spaceship.x += spaceship.vx;
+      spaceship.y += spaceship.vy;
+
+      // update camera
+      vis.updateCamera();
+    }, 16);
   }
 
   updateTooltip() {
     let vis = this;
 
+    const hoverRadius =
+      (Math.max(spaceship.w, spaceship.h) / 2 + 5) / vis.cameraScale;
+
     const hovered = vis.nodes.find((d) => {
       const dx = d.x - spaceship.x;
       const dy = d.y - spaceship.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      return (
-        distance <
-        Math.max(spaceship.w, spaceship.h) / 2 + vis.sizeScale(d.playerCount)
-      );
+      return distance < hoverRadius + vis.sizeScale(d.playerCount);
     });
 
+    vis.tooltipText.selectAll("tspan").remove();
+
     if (hovered) {
-      vis.tooltip.text(
-        `${hovered.id} | Players: ${hovered.playerCount} | Indie: ${
-          hovered.genres.includes("Indie") ? "Yes" : "No"
-        }`
+      const lines = [
+        `${hovered.id}`,
+        `Players: ${hovered.playerCount}`,
+        `Indie: ${hovered.genres.includes("Indie") ? "Yes" : "No"}`,
+      ];
+
+      lines.forEach((line, i) => {
+        vis.tooltipText
+          .append("tspan")
+          .text(line)
+          .attr("x", 0) // center relative to parent <text>
+          .attr("dy", i === 0 ? "0em" : "1.2em") // spacing between lines
+          .attr("text-anchor", "middle");
+      });
+
+      vis.tooltipGroup.attr(
+        "transform",
+        `translate(${spaceWidth / 2}, ${spaceHeight - 80})`
       );
+
+      vis.tooltipBg.attr("height", 80).attr("width", 500).attr("x", -250);
     } else {
-      vis.tooltip.text("Hover a node...");
+      vis.tooltipText
+        .append("tspan")
+        .text("Hover a node...")
+        .attr("x", 0)
+        .attr("dy", "0em")
+        .attr("text-anchor", "middle");
+
+      vis.tooltipGroup.attr(
+        "transform",
+        `translate(${spaceWidth / 2}, ${spaceHeight - 40})`
+      );
+
+      vis.tooltipBg.attr("height", 40).attr("width", 200).attr("x", -100);
     }
   }
-  // i dont think i need an update vis?
 }
