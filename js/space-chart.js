@@ -317,6 +317,17 @@ class SpaceChart {
       pressed[event.key] = false; // mark key as released
     });
 
+    // for ship trail
+    vis.trailPoints = [];
+    const trailLength = 20;
+
+    vis.trail = vis.svg
+      .append("path")
+      .attr("fill", "none")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 2)
+      .attr("stroke-opacity", 0.5);
+
     // for smooth acceleration
     const holdTime = {
       ArrowUp: 0,
@@ -326,6 +337,18 @@ class SpaceChart {
     };
 
     d3.interval(() => {
+      vis.trailPoints.push({ x: spaceship.x, y: spaceship.y });
+      if (vis.trailPoints.length > trailLength) vis.trailPoints.shift();
+
+      // Convert to scaled coordinates for camera
+      const pathData = d3
+        .line()
+        .x((d) => spaceWidth / 2 + (d.x - spaceship.x) * vis.cameraScale)
+        .y((d) => spaceHeight / 2 + (d.y - spaceship.y) * vis.cameraScale)
+        .curve(d3.curveBasis)(vis.trailPoints);
+
+      vis.trail.attr("d", pathData);
+
       let dx = 0;
       let dy = 0;
 
@@ -395,8 +418,8 @@ class SpaceChart {
     if (hovered) {
       const lines = [
         `${hovered.id}`,
-        `Players: ${hovered.playerCount}`,
-        `Indie: ${hovered.genres.includes("Indie") ? "Yes" : "No"}`,
+        `Current Players: ${hovered.playerCount}`,
+        ` ${hovered.genres.includes("Indie") ? "Indie" : "Studio"}`,
       ];
 
       lines.forEach((line, i) => {
