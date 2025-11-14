@@ -67,12 +67,12 @@ let topGenres = [
 ]; // these are the top genres found from data exploration
 const myColors = [
   "#e6194b",
-  "#3cb44b",
+  "#9c3cb4",
   "#0082c8",
   "#f58231",
   "#46f0f0",
-  "#f032e6",
-  "#135021",
+  "#e6d53c",
+  "#0d4211",
 ];
 let spaceship = { x: spaceWidth / 2, y: spaceHeight / 2, w: 20, h: 20 };
 const clusterCenters = {
@@ -124,7 +124,7 @@ class SpaceChart {
         d3.min(vis.nodes, (d) => d.playerCount),
         d3.max(vis.nodes, (d) => d.playerCount),
       ])
-      .range([3, 100]); //TODO: tweak if needed
+      .range([2, 100]); //TODO: tweak if needed
 
     const backgroundSizeScale = d3
       .scaleSqrt()
@@ -135,13 +135,13 @@ class SpaceChart {
       .range([10, 110]); //TODO: tweak if needed
 
     // brightness scale based on positive percentual
-    const brightnessScale = d3
+    const opacityScale = d3
       .scaleLinear()
       .domain([
         d3.min(vis.nodes, (d) => d.positive_percentual),
         d3.max(vis.nodes, (d) => d.positive_percentual),
       ])
-      .range([0, 0.8]);
+      .range([0, 1]);
 
     // scale for different genres
     const genreColorScale = d3.scaleOrdinal().domain(topGenres).range(myColors);
@@ -151,7 +151,7 @@ class SpaceChart {
       .append("svg")
       .attr("width", spaceWidth + spaceMargin.left + spaceMargin.right)
       .attr("height", spaceHeight)
-      .style("background", "#222"); // maybe do an actual space image in the future
+      .style("background", "#0e1321"); // maybe do an actual space image in the future
 
     vis.g = vis.svg.append("g");
 
@@ -216,14 +216,13 @@ class SpaceChart {
       .join("circle")
       .attr("r", (d) => vis.sizeScale(d.playerCount))
       .attr("fill", (d) => {
-        const brightness = brightnessScale(d.positive_percentual) * 100;
-
         if (d.genres.includes("Indie")) {
-          return `hsl(45, 100%, ${brightness}%)`;
+          return `hsl(163, 97%, 41%)`;
         } else {
-          return `hsl(275, 100%, ${brightness}%)`;
+          return `hsl(320, 94%, 57%)`;
         }
-      });
+      })
+      .attr("opacity", (d) => opacityScale(d.positive_percentual));
 
     const nodesByCluster = d3.group(vis.nodes, (d) => d.cluster);
 
@@ -268,7 +267,7 @@ class SpaceChart {
       .attr("y", (d) => clusterCenters[d].y)
       .attr("fill", "#fff")
       .attr("text-anchor", "middle")
-      .attr("font-size", "32px")
+      .attr("font-size", "1rem")
       .attr("font-weight", "bold")
       .attr("stroke", "#000")
       .attr("stroke-width", 2)
@@ -299,16 +298,10 @@ class SpaceChart {
 
     // draw teh spaceship
     vis.spaceshipGraphic = vis.svg
-      .append("rect")
-      // .attr("x", spaceship.x - spaceship.w / 2)
-      // .attr("y", spaceship.y - spaceship.h / 2)
-      .attr("width", spaceship.w)
-      .attr("height", spaceship.h)
-      .attr("fill", "#fff");
-
-    vis.spaceshipGraphic
-      .attr("x", spaceWidth / 2 - spaceship.w / 2)
-      .attr("y", spaceHeight / 2 - spaceship.h / 2);
+      .append("polygon")
+      .attr("points", "0,-20 12,10 0,5 -12,10") // game spaceship arrow
+      .attr("fill", "#fff")
+      .attr("transform", `translate(${spaceWidth / 2}, ${spaceHeight / 2})`);
 
     spaceship.vx = 0;
     spaceship.vy = 0;
@@ -371,6 +364,13 @@ class SpaceChart {
       // apply movement
       spaceship.x += spaceship.vx;
       spaceship.y += spaceship.vy;
+
+      // get angle
+      let angle = Math.atan2(spaceship.vy, spaceship.vx) * (180 / Math.PI) + 90;
+      vis.spaceshipGraphic.attr(
+        "transform",
+        `translate(${spaceWidth / 2}, ${spaceHeight / 2}) rotate(${angle})`
+      );
 
       // update camera
       vis.updateCamera();
