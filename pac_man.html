@@ -1,537 +1,627 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23FFD24A%22/></svg>">
+  <head>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23FFD24A%22/></svg>"
+    />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <!-- Pixel font for true arcade vibe -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root{
-            /* Retro arcade palette */
-            --bg0:#0a0b10; --bg1:#0e1220;
-            --grid:#151a2b;
-            --ink:#e7f0ff; --muted:#9bb0d1;
-            --action:#ff66cc;  /* Action pink */
-            --indie:#00ffb3;   /* Indie mint */
-            --pac:#ffd24a; --pac-stroke:#fff0a6;
-        }
-        html, body {
-            height:100%;
-            margin:0;
-            background:#000;
-            font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        }
-        #wrap {
-            display:grid;
-            place-items:center;
-            min-height:100%;
-        }
-        .frame {
-            position:relative;
-            width:960px;
-        }
-        .row {
-            display:flex;
-            gap:12px;
-        }
-        /* Left = 2/3 scatter game; Right = 1/3 leaderboard */
-        #game {
-            width:640px;
-            height:720px;
-            border-radius:12px;
-            box-shadow:0 10px 28px rgba(0,0,0,.55);
-            image-rendering:pixelated;
-        }
-        #sidePanel {
-            width:308px;
-            height:720px;
-            border-radius:12px;
-            box-shadow:0 10px 28px rgba(0,0,0,.55);
-            image-rendering:pixelated;
-            background:radial-gradient(circle at 20% 0%, #151729 0, #050612 60%, #000 100%);
-            padding:10px 8px;
-            box-sizing:border-box;
-            display:flex;
-            flex-direction:column;
-            gap:12px;
-            color:var(--ink);
-        }
-        .main-title {
-            text-align: center;
-            font-size: 22px;
-            margin: 12px 0 20px;
-            color: #f6f7ff;
-            text-shadow:
-                    0 0 8px rgba(255,255,255,0.4),
-                    0 0 16px rgba(255,210,74,0.4);
-        }
-        .hud {
-            position:absolute;
-            left:10px;
-            top:10px;
-            display:flex;
-            align-items:center;
-            gap:12px;
-            font-family:"Press Start 2P", monospace;
-            font-size:10px;
-            color:var(--ink);
-            width:620px;
-            z-index: 999;
-        }
+      :root {
+        /* Retro arcade palette */
+        --bg0: #0a0b10;
+        --bg1: #0e1220;
+        --grid: #151a2b;
+        --ink: #e7f0ff;
+        --muted: #9bb0d1;
+        --action: #ff66cc; /* Action pink */
+        --indie: #00ffb3; /* Indie mint */
+        --pac: #ffd24a;
+        --pac-stroke: #fff0a6;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #000;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      #wrap {
+        display: grid;
+        place-items: center;
+        min-height: 100%;
+      }
+      .frame {
+        position: relative;
+        width: 960px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+      }
+      /* Left = 2/3 scatter game; Right = 1/3 leaderboard */
+      #game {
+        width: 640px;
+        height: 720px;
+        border-radius: 12px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+        image-rendering: pixelated;
+      }
+      #sidePanel {
+        width: 308px;
+        height: 720px;
+        border-radius: 12px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+        image-rendering: pixelated;
+        background: radial-gradient(
+          circle at 20% 0%,
+          #151729 0,
+          #050612 60%,
+          #000 100%
+        );
+        padding: 10px 8px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        color: var(--ink);
+      }
+      .main-title {
+        text-align: center;
+        font-size: 22px;
+        margin: 12px 0 20px;
+        color: #f6f7ff;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.4),
+          0 0 16px rgba(255, 210, 74, 0.4);
+      }
+      .hud {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        color: var(--ink);
+        width: 620px;
+        z-index: 999;
+      }
 
-        .hud-spacer {
-            flex: 1;
-        }
+      .hud-spacer {
+        flex: 1;
+      }
 
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-left: 0;
-        }
+      .controls {
+        display: flex;
+        gap: 8px;
+        margin-left: 0;
+      }
 
-        .end-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8);
-            padding: 14px 20px;
-            font-size: 26px;
-            color: #ffe6a7;
-            text-shadow:
-                    0 0 6px rgba(255,255,200,0.9),
-                    0 0 12px rgba(255,210,74,1),
-                    0 0 20px rgba(255,210,74,1);
-            background: rgba(0,0,0,0.4);
-            border: 2px solid #ffd24a;
-            border-radius: 12px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .4s ease, transform .4s ease;
-            z-index: 99999;
-            white-space: nowrap;
-            width: max-content;
-            max-width: none;
-        }
-        .end-message.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1.05);
-        }
+      .end-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        padding: 14px 20px;
+        font-size: 26px;
+        color: #ffe6a7;
+        text-shadow: 0 0 6px rgba(255, 255, 200, 0.9),
+          0 0 12px rgba(255, 210, 74, 1), 0 0 20px rgba(255, 210, 74, 1);
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid #ffd24a;
+        border-radius: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease, transform 0.4s ease;
+        z-index: 99999;
+        white-space: nowrap;
+        width: max-content;
+        max-width: none;
+      }
+      .end-message.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.05);
+      }
 
-        .hud .badge{
-            padding:2px 8px;
-            border-radius:6px;
-            font-size:12px;
-            background:#121629;
-            box-shadow:0 0 0 1px #23324d inset;
-        }
+      .hud .badge {
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        background: #121629;
+        box-shadow: 0 0 0 1px #23324d inset;
+      }
 
-        .hint {
-            position:absolute;
-            left:10px;
-            bottom:-10px;
-            color:var(--muted);
-            font-size:12px;
-        }
-        .legend {
-            position:absolute;
-            right:10px;
-            bottom:10px;
-            color:var(--muted);
-            font-size:12px;
-        }
+      .hint {
+        position: absolute;
+        left: 10px;
+        bottom: -10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .legend {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
 
-        .btn {
-            appearance:none;
-            border:0;
-            background:#12192b;
-            color:#cfe1ff;
-            padding:6px 10px;
-            border-radius:8px;
-            font-weight:700;
-            cursor:pointer;
-            box-shadow:0 0 0 1px #24314a inset;
-            font-family: "Press Start 2P", system-ui, monospace;
-            font-size: 14px;
-            line-height: 1;
-            text-align: center;
-        }
-        .btn.debug { opacity:.85 }
+      .btn {
+        appearance: none;
+        border: 0;
+        background: #12192b;
+        color: #cfe1ff;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 0 0 1px #24314a inset;
+        font-family: "Press Start 2P", system-ui, monospace;
+        font-size: 14px;
+        line-height: 1;
+        text-align: center;
+      }
+      .btn.debug {
+        opacity: 0.85;
+      }
 
-        .tooltip {
-            position:fixed;
-            pointer-events:none;
-            background:rgba(10,16,28,.75);
-            color:#dfe9ff;
-            padding:8px 10px;
-            border:1px solid #2b3b5a;
-            border-radius:8px;
-            font-size:12px;
-            box-shadow:0 8px 22px rgba(0,0,0,.45);
-            opacity:0;
-            transform:translateY(-6px);
-            transition:opacity .12s ease, transform .12s ease;
-            white-space:nowrap;
-        }
-        .pix {
-            font-family:"Press Start 2P", system-ui, monospace;
-            letter-spacing:0;
-        }
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(10, 16, 28, 0.75);
+        color: #dfe9ff;
+        padding: 8px 10px;
+        border: 1px solid #2b3b5a;
+        border-radius: 8px;
+        font-size: 12px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        transform: translateY(-6px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        white-space: nowrap;
+      }
+      .pix {
+        font-family: "Press Start 2P", system-ui, monospace;
+        letter-spacing: 0;
+      }
 
-        /* --- RPG-style leaderboard boxes --- */
-        .board {
-            position:relative;
-            border-radius:10px;
-            padding:8px 8px 6px;
-            box-sizing:border-box;
-            background:linear-gradient(145deg, #060815 0, #0e1220 40%, #050612 100%);
-            border:2px solid #f6f7ff;
-            box-shadow:
-                    0 0 0 1px rgba(255,255,255,.18),
-                    0 0 12px rgba(255,255,255,.18),
-                    0 8px 18px rgba(0,0,0,.7);
+      /* --- RPG-style leaderboard boxes --- */
+      .board {
+        position: relative;
+        border-radius: 10px;
+        padding: 8px 8px 6px;
+        box-sizing: border-box;
+        background: linear-gradient(
+          145deg,
+          #060815 0,
+          #0e1220 40%,
+          #050612 100%
+        );
+        border: 2px solid #f6f7ff;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18),
+          0 0 12px rgba(255, 255, 255, 0.18), 0 8px 18px rgba(0, 0, 0, 0.7);
 
-            height: 330px;
+        height: 330px;
 
-            display:flex;
-            flex-direction:column;
-        }
+        display: flex;
+        flex-direction: column;
+      }
 
-        .board::before {
-            content:"";
-            position:absolute;
-            inset:1px;
-            border-radius:7px;
-            border:1px solid rgba(0,0,0,.75);
-            pointer-events:none;
-        }
-        .board-title {
-            font-size:9px;
-            padding:2px 3px 4px;
-            margin-bottom:4px;
-            color:#f5f5ff;
-            text-shadow:0 0 4px rgba(255,255,255,.7);
-            border-bottom:1px solid rgba(255,255,255,.35);
-        }
-        .board-body {
-            font-size:9px;
-            padding-top:2px;
-            display:flex;
-            flex-direction:column;
-            gap:2px;
+      .board::before {
+        content: "";
+        position: absolute;
+        inset: 1px;
+        border-radius: 7px;
+        border: 1px solid rgba(0, 0, 0, 0.75);
+        pointer-events: none;
+      }
+      .board-title {
+        font-size: 9px;
+        padding: 2px 3px 4px;
+        margin-bottom: 4px;
+        color: #f5f5ff;
+        text-shadow: 0 0 4px rgba(255, 255, 255, 0.7);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+      }
+      .board-body {
+        font-size: 9px;
+        padding-top: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
 
-            max-height: 300px;
-            overflow-y:auto;
+        max-height: 300px;
+        overflow-y: auto;
 
-            scrollbar-width:thin;
-            scrollbar-color:#444 #111;
-        }
-        .board-body::-webkit-scrollbar {
-            width:6px;
-        }
-        .board-body::-webkit-scrollbar-track {
-            background:#0b0f1a;
-            border-radius:6px;
-        }
-        .board-body::-webkit-scrollbar-thumb {
-            background:#444;
-            border-radius:6px;
-        }
+        scrollbar-width: thin;
+        scrollbar-color: #444 #111;
+      }
+      .board-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .board-body::-webkit-scrollbar-track {
+        background: #0b0f1a;
+        border-radius: 6px;
+      }
+      .board-body::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 6px;
+      }
 
-        .board-empty {
-            font-size:8px;
-            color:var(--muted);
-            opacity:0.9;
-            line-height:1.4;
-        }
+      .board-empty {
+        font-size: 8px;
+        color: var(--muted);
+        opacity: 0.9;
+        line-height: 1.4;
+      }
 
-        .rank-row {
-            display:flex;
-            align-items:baseline;
-            justify-content:space-between;
-            padding:2px 4px;
-            border-radius:4px;
-            transition:background .18s ease, box-shadow .18s ease, transform .12s ease;
-        }
-        .rank-row:nth-child(odd) {
-            background:rgba(255,255,255,0.02);
-        }
-        .rank-row.flash {
-            background:rgba(255,255,255,0.09);
-            box-shadow:0 0 0 1px rgba(255,255,255,.9), 0 0 12px var(--pac);
-            transform:translateY(-1px);
-        }
-        .rank-main {
-            display:flex;
-            align-items:baseline;
-            gap:4px;
-            min-width:0;
-        }
-        .rank-index {
-            color:#fafbff;
-            font-size:8px;
-        }
-        .rank-name {
-            max-width:140px;
-            overflow:hidden;
-            text-overflow:ellipsis;
-            white-space:nowrap;
-        }
-        .rank-meta {
-            display:flex;
-            align-items:baseline;
-            gap:6px;
-            font-size:8px;
-            color:var(--muted);
-        }
-        .rank-tooltip {
-            position: fixed;
-            pointer-events: none;
-            background: rgba(15, 20, 35, 0.9);
-            color: #e7f0ff;
-            padding: 6px 8px;
-            border: 1px solid #2b3b5a;
-            border-radius: 6px;
-            font-size: 11px;
-            font-family: "Press Start 2P", monospace;
-            opacity: 0;
-            transition: opacity .12s ease, transform .12s ease;
-            white-space: nowrap;
-            z-index: 99999;
-        }
+      .rank-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 2px 4px;
+        border-radius: 4px;
+        transition: background 0.18s ease, box-shadow 0.18s ease,
+          transform 0.12s ease;
+      }
+      .rank-row:nth-child(odd) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .rank-row.flash {
+        background: rgba(255, 255, 255, 0.09);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 12px var(--pac);
+        transform: translateY(-1px);
+      }
+      .rank-main {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        min-width: 0;
+      }
+      .rank-index {
+        color: #fafbff;
+        font-size: 8px;
+      }
+      .rank-name {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .rank-meta {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-size: 8px;
+        color: var(--muted);
+      }
+      .rank-tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(15, 20, 35, 0.9);
+        color: #e7f0ff;
+        padding: 6px 8px;
+        border: 1px solid #2b3b5a;
+        border-radius: 6px;
+        font-size: 11px;
+        font-family: "Press Start 2P", monospace;
+        opacity: 0;
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        white-space: nowrap;
+        z-index: 99999;
+      }
 
-        .cat-dot {
-            width:8px;
-            height:8px;
-            border-radius:999px;
-            display:inline-block;
-        }
-        .cat-dot.action {
-            background:var(--action);
-            box-shadow:0 0 6px var(--action);
-        }
-        .cat-dot.indie {
-            background:var(--indie);
-            box-shadow:0 0 6px var(--indie);
-        }
+      .cat-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      .cat-dot.action {
+        background: var(--action);
+        box-shadow: 0 0 6px var(--action);
+      }
+      .cat-dot.indie {
+        background: var(--indie);
+        box-shadow: 0 0 6px var(--indie);
+      }
 
-        .rank-rating { color:#f8f9ff; }
-        .rank-reviews { min-width:32px; text-align:right; }
-        .rank-price { min-width:40px; text-align:right; }
-
+      .rank-rating {
+        color: #f8f9ff;
+      }
+      .rank-reviews {
+        min-width: 32px;
+        text-align: right;
+      }
+      .rank-price {
+        min-width: 40px;
+        text-align: right;
+      }
     </style>
-</head>
-<body>
-<div id="wrap">
-    <h1 class="main-title pix">Discovering Value: Steam Price vs Review Trends</h1>
-    <div class="frame">
-        <div id="endMessage" class="end-message pix">Full Dataset Explored!</div>
+  </head>
+  <body>
+    <div id="wrap">
+      <h1 class="main-title pix">
+        Discovering Value: Steam Price vs Review Trends
+      </h1>
+      <div class="frame">
+        <div id="endMessage" class="end-message pix">
+          Full Dataset Explored!
+        </div>
         <div class="hud">
-            <span class="pix">TOTAL</span>
-            <span id="scoreTotal" class="badge">0</span>
+          <span class="pix">TOTAL</span>
+          <span id="scoreTotal" class="badge">0</span>
 
-            <span class="pix">ACTION</span>
-            <span id="scoreAction" class="badge" style="color:#230017; background:var(--action); box-shadow:0 0 12px var(--action);">0</span>
+          <span class="pix">ACTION</span>
+          <span
+            id="scoreAction"
+            class="badge"
+            style="
+              color: #230017;
+              background: var(--action);
+              box-shadow: 0 0 12px var(--action);
+            "
+            >0</span
+          >
 
-            <span class="pix">INDIE</span>
-            <span id="scoreIndie" class="badge" style="color:#001a12; background:var(--indie); box-shadow:0 0 12px var(--indie);">0</span>
+          <span class="pix">INDIE</span>
+          <span
+            id="scoreIndie"
+            class="badge"
+            style="
+              color: #001a12;
+              background: var(--indie);
+              box-shadow: 0 0 12px var(--indie);
+            "
+            >0</span
+          >
 
-            <div class="hud-spacer"></div>
+          <div class="hud-spacer"></div>
 
-            <div class="controls">
-                <button id="reset" class="btn pix-icon" title="Restart">
-                    <span class="pix">↻</span>
-                </button>
-                <button id="pause" class="btn pix-icon" title="Pause / Resume">
-                    <span id="pauseIcon" class="pix">⏸</span>
-                </button>
-                <button id="debug" class="btn pix-icon debug" title="Log eaten games to console">
-                    <span class="pix">⚙</span>
-                </button>
-            </div>
+          <div class="controls">
+            <button id="reset" class="btn pix-icon" title="Restart">
+              <span class="pix">↻</span>
+            </button>
+            <button id="pause" class="btn pix-icon" title="Pause / Resume">
+              <span id="pauseIcon" class="pix">⏸</span>
+            </button>
+            <button
+              id="debug"
+              class="btn pix-icon debug"
+              title="Log eaten games to console"
+            >
+              <span class="pix">⚙</span>
+            </button>
+          </div>
         </div>
 
-        <div class="hint">Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to score & rank</div>
-        <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
+        <div class="hint">
+          Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to
+          score & rank
+        </div>
+        <div class="legend">
+          Action =
+          <span style="color: var(--action); font-weight: 800">■</span> · Indie
+          = <span style="color: var(--indie); font-weight: 800">■</span>
+        </div>
 
         <div class="row">
-            <!-- Left: Bubble plot (price vs positive %) -->
-            <svg id="game" viewBox="0 0 640 720"></svg>
+          <!-- Left: Bubble plot (price vs positive %) -->
+          <svg id="game" viewBox="0 0 640 720"></svg>
 
-            <!-- Right: RPG-style dual leaderboard -->
-            <div id="sidePanel">
-                <div class="board" id="boardQualityBox">
-                    <div class="board-title pix">TOP RATED (EATEN)</div>
-                    <div class="board-body" id="boardQuality"></div>
-                </div>
-                <div class="board" id="boardValueBox">
-                    <div class="board-title pix">BEST VALUE (EATEN)</div>
-                    <div class="board-body" id="boardValue"></div>
-                </div>
+          <!-- Right: RPG-style dual leaderboard -->
+          <div id="sidePanel">
+            <div class="board" id="boardQualityBox">
+              <div class="board-title pix">TOP RATED (EATEN)</div>
+              <div class="board-body" id="boardQuality"></div>
             </div>
+            <div class="board" id="boardValueBox">
+              <div class="board-title pix">BEST VALUE (EATEN)</div>
+              <div class="board-body" id="boardValue"></div>
+            </div>
+          </div>
         </div>
 
         <div id="tooltip" class="tooltip"></div>
         <div id="rankTooltip" class="rank-tooltip"></div>
+      </div>
     </div>
-</div>
 
-<script>
-    ;(() => {
+    <script>
+      (() => {
         // === Dimensions ===
-        const GW = 640, GH = 720; // game (scatter)
+        const GW = 640,
+          GH = 720; // game (scatter)
 
         // === Roots & tooltip ===
-        const svg = d3.select('#game');
-        const tooltip = d3.select('#tooltip');
+        const svg = d3.select("#game");
+        const tooltip = d3.select("#tooltip");
 
         // === Common helpers ===
-        const fillFor = c => c==='Action' ? 'var(--action)' : 'var(--indie)';
-        const q = sel => document.querySelector(sel);
+        const fillFor = (c) =>
+          c === "Action" ? "var(--action)" : "var(--indie)";
+        const q = (sel) => document.querySelector(sel);
 
-        const boardQualityEl = q('#boardQuality');
-        const boardValueEl = q('#boardValue');
+        const boardQualityEl = q("#boardQuality");
+        const boardValueEl = q("#boardValue");
 
-        function escapeHtml(str){
-            return String(str)
-                .replace(/&/g,'&amp;')
-                .replace(/</g,'&lt;')
-                .replace(/>/g,'&gt;')
-                .replace(/"/g,'&quot;')
-                .replace(/'/g,'&#39;');
+        function escapeHtml(str) {
+          return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
         }
-        function formatReviews(n){
-            if (n >= 1_000_000) return (n/1_000_000).toFixed(1).replace(/\.0$/,'') + 'm';
-            if (n >= 1_000) return (n/1_000).toFixed(1).replace(/\.0$/,'') + 'k';
-            return String(n);
+        function formatReviews(n) {
+          if (n >= 1_000_000)
+            return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "m";
+          if (n >= 1_000)
+            return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+          return String(n);
         }
-        function formatPrice(p){
-            return '$' + (p || 0).toFixed(2);
+        function formatPrice(p) {
+          return "$" + (p || 0).toFixed(2);
         }
 
         // === Scatter background (gradient + grid) ===
-        const defs = svg.append('defs');
-        const glowPac = defs.append('filter').attr('id','glowPac');
-        glowPac.append('feDropShadow')
-            .attr('dx',0)
-            .attr('dy',0)
-            .attr('stdDeviation',1.2)
-            .attr('flood-color','var(--pac)')
-            .attr('flood-opacity',.9);
+        const defs = svg.append("defs");
+        const glowPac = defs.append("filter").attr("id", "glowPac");
+        glowPac
+          .append("feDropShadow")
+          .attr("dx", 0)
+          .attr("dy", 0)
+          .attr("stdDeviation", 1.2)
+          .attr("flood-color", "var(--pac)")
+          .attr("flood-opacity", 0.9);
 
-        const grad = defs.append('linearGradient')
-            .attr('id','bg')
-            .attr('x1','0%').attr('y1','0%')
-            .attr('x2','100%').attr('y2','100%');
-        grad.append('stop').attr('offset','0%').attr('stop-color','var(--bg0)');
-        grad.append('stop').attr('offset','100%').attr('stop-color','var(--bg1)');
+        const grad = defs
+          .append("linearGradient")
+          .attr("id", "bg")
+          .attr("x1", "0%")
+          .attr("y1", "0%")
+          .attr("x2", "100%")
+          .attr("y2", "100%");
+        grad
+          .append("stop")
+          .attr("offset", "0%")
+          .attr("stop-color", "var(--bg0)");
+        grad
+          .append("stop")
+          .attr("offset", "100%")
+          .attr("stop-color", "var(--bg1)");
 
-        const glowMint = defs.append('filter').attr('id','glowMint');
-        glowMint.append('feDropShadow')
-            .attr('dx',0).attr('dy',0)
-            .attr('stdDeviation',1.5)
-            .attr('flood-color','var(--indie)')
-            .attr('flood-opacity',.85);
-        const glowPink = defs.append('filter').attr('id','glowPink');
-        glowPink.append('feDropShadow')
-            .attr('dx',0).attr('dy',0)
-            .attr('stdDeviation',1.5)
-            .attr('flood-color','var(--action)')
-            .attr('flood-opacity',.85);
+        const glowMint = defs.append("filter").attr("id", "glowMint");
+        glowMint
+          .append("feDropShadow")
+          .attr("dx", 0)
+          .attr("dy", 0)
+          .attr("stdDeviation", 1.5)
+          .attr("flood-color", "var(--indie)")
+          .attr("flood-opacity", 0.85);
+        const glowPink = defs.append("filter").attr("id", "glowPink");
+        glowPink
+          .append("feDropShadow")
+          .attr("dx", 0)
+          .attr("dy", 0)
+          .attr("stdDeviation", 1.5)
+          .attr("flood-color", "var(--action)")
+          .attr("flood-opacity", 0.85);
 
-        svg.append('rect')
-            .attr('x',0).attr('y',0)
-            .attr('width',GW).attr('height',GH)
-            .attr('fill','url(#bg)');
+        svg
+          .append("rect")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", GW)
+          .attr("height", GH)
+          .attr("fill", "url(#bg)");
 
-        const gGrid = svg.append('g');
-        for (let x=8; x<GW; x+=16)
-            gGrid.append('line')
-                .attr('x1',x).attr('y1',0)
-                .attr('x2',x).attr('y2',GH)
-                .attr('stroke','var(--grid)')
-                .attr('stroke-opacity',.25)
-                .attr('shape-rendering','crispEdges');
-        for (let y=8; y<GH; y+=16)
-            gGrid.append('line')
-                .attr('x1',0).attr('y1',y)
-                .attr('x2',GW).attr('y2',y)
-                .attr('stroke','var(--grid)')
-                .attr('stroke-opacity',.25)
-                .attr('shape-rendering','crispEdges');
+        const gGrid = svg.append("g");
+        for (let x = 8; x < GW; x += 16)
+          gGrid
+            .append("line")
+            .attr("x1", x)
+            .attr("y1", 0)
+            .attr("x2", x)
+            .attr("y2", GH)
+            .attr("stroke", "var(--grid)")
+            .attr("stroke-opacity", 0.25)
+            .attr("shape-rendering", "crispEdges");
+        for (let y = 8; y < GH; y += 16)
+          gGrid
+            .append("line")
+            .attr("x1", 0)
+            .attr("y1", y)
+            .attr("x2", GW)
+            .attr("y2", y)
+            .attr("stroke", "var(--grid)")
+            .attr("stroke-opacity", 0.25)
+            .attr("shape-rendering", "crispEdges");
 
         // === Scatter plot groups ===
-        const margin = {l:48, r:18, t:70, b:42};
+        const margin = { l: 48, r: 18, t: 70, b: 42 };
         const innerW = GW - margin.l - margin.r;
         const innerH = GH - margin.t - margin.b;
-        const gPlot = svg.append('g').attr('transform',`translate(${margin.l},${margin.t})`);
+        const gPlot = svg
+          .append("g")
+          .attr("transform", `translate(${margin.l},${margin.t})`);
 
-        const gXAxis = gPlot.append('g').attr('transform',`translate(0,${innerH})`);
-        const gYAxis = gPlot.append('g');
-        const gPellets = gPlot.append('g');
-        gPlot.append('g').attr('id','bursts');
-        const gPac = gPlot.append('g');
+        const gXAxis = gPlot
+          .append("g")
+          .attr("transform", `translate(0,${innerH})`);
+        const gYAxis = gPlot.append("g");
+        const gPellets = gPlot.append("g");
+        gPlot.append("g").attr("id", "bursts");
+        const gPac = gPlot.append("g");
 
         // === Pac-Man ===
         const pac = {
-            x: innerW/2|0,
-            y: innerH/2|0,
-            r: 12,
-            dir: 'right',
-            speed: 2.6,
-            mouth: 0.2,
-            phase: 0
+          x: (innerW / 2) | 0,
+          y: (innerH / 2) | 0,
+          r: 12,
+          dir: "right",
+          speed: 2.6,
+          mouth: 0.2,
+          phase: 0,
         };
         let started = false;
-        const pacPath = gPac.append('path')
-            .attr('fill','var(--pac)')
-            .attr('stroke','var(--pac-stroke)')
-            .attr('stroke-width',1.1)
-            .attr('shape-rendering','crispEdges');
+        const pacPath = gPac
+          .append("path")
+          .attr("fill", "var(--pac)")
+          .attr("stroke", "var(--pac-stroke)")
+          .attr("stroke-width", 1.1)
+          .attr("shape-rendering", "crispEdges");
 
         // === HUD ===
         const scoreEl = {
-            total: q('#scoreTotal'),
-            action: q('#scoreAction'),
-            indie: q('#scoreIndie')
+          total: q("#scoreTotal"),
+          action: q("#scoreAction"),
+          indie: q("#scoreIndie"),
         };
-        let score = { total:0, Action:0, Indie:0 };
+        let score = { total: 0, Action: 0, Indie: 0 };
 
         // === Eaten buckets for rankings ===
         const eatenBy = { Action: [], Indie: [] };
 
-        function updateRanking(){
-            const eaten = [...eatenBy.Action, ...eatenBy.Indie];
+        function updateRanking() {
+          const eaten = [...eatenBy.Action, ...eatenBy.Indie];
 
-            if (!eaten.length){
-                boardQualityEl.innerHTML =
-                    "<div class='board-empty pix'>Eat some bubbles to fill this ranking!<br>High-rating games you eat will appear here.</div>";
-                boardValueEl.innerHTML =
-                    "<div class='board-empty pix'>Cheap + highly rated games you eat<br>will show up as BEST VALUE here.</div>";
-                return;
-            }
+          if (!eaten.length) {
+            boardQualityEl.innerHTML =
+              "<div class='board-empty pix'>Eat some bubbles to fill this ranking!<br>High-rating games you eat will appear here.</div>";
+            boardValueEl.innerHTML =
+              "<div class='board-empty pix'>Cheap + highly rated games you eat<br>will show up as BEST VALUE here.</div>";
+            return;
+          }
 
-            const byQuality = [...eaten]
-                .sort((a,b) =>
-                    (b.rating - a.rating) ||
-                    (b.total_reviews - a.total_reviews)
-                )
+          const byQuality = [...eaten].sort(
+            (a, b) => b.rating - a.rating || b.total_reviews - a.total_reviews
+          );
 
-            const valueScore = d => d.rating / ( (d.price || 0) + 1 );
-            const byValue = [...eaten]
-                .sort((a,b) => valueScore(b) - valueScore(a))
+          const valueScore = (d) => d.rating / ((d.price || 0) + 1);
+          const byValue = [...eaten].sort(
+            (a, b) => valueScore(b) - valueScore(a)
+          );
 
-            const rowsQuality = byQuality.map((d,i)=>{
-                const key = encodeURIComponent(d.name);
-                const safeName = escapeHtml(d.name);
-                const cat = d.cat;
-                const rating = (d.rating || 0).toFixed(1);
-                const reviews = formatReviews(d.total_reviews || 0);
-                return `
+          const rowsQuality = byQuality
+            .map((d, i) => {
+              const key = encodeURIComponent(d.name);
+              const safeName = escapeHtml(d.name);
+              const cat = d.cat;
+              const rating = (d.rating || 0).toFixed(1);
+              const reviews = formatReviews(d.total_reviews || 0);
+              return `
 <div class="rank-row pix" data-name="${key}" data-cat="${cat}">
   <div class="rank-main">
-    <span class="rank-index">#${i+1}</span>
+    <span class="rank-index">#${i + 1}</span>
     <span class="cat-dot ${cat.toLowerCase()}"></span>
     <span class="rank-name">${safeName}</span>
   </div>
@@ -540,18 +630,20 @@
     <span class="rank-reviews">${reviews}</span>
   </div>
 </div>`;
-            }).join("");
+            })
+            .join("");
 
-            const rowsValue = byValue.map((d,i)=>{
-                const key = encodeURIComponent(d.name);
-                const safeName = escapeHtml(d.name);
-                const cat = d.cat;
-                const rating = (d.rating || 0).toFixed(1);
-                const price = formatPrice(d.price || 0);
-                return `
+          const rowsValue = byValue
+            .map((d, i) => {
+              const key = encodeURIComponent(d.name);
+              const safeName = escapeHtml(d.name);
+              const cat = d.cat;
+              const rating = (d.rating || 0).toFixed(1);
+              const price = formatPrice(d.price || 0);
+              return `
 <div class="rank-row pix" data-name="${key}" data-cat="${cat}">
   <div class="rank-main">
-    <span class="rank-index">#${i+1}</span>
+    <span class="rank-index">#${i + 1}</span>
     <span class="cat-dot ${cat.toLowerCase()}"></span>
     <span class="rank-name">${safeName}</span>
   </div>
@@ -560,386 +652,465 @@
     <span class="rank-rating">${rating}%</span>
   </div>
 </div>`;
-            }).join("");
+            })
+            .join("");
 
-            boardQualityEl.innerHTML = rowsQuality;
-            boardValueEl.innerHTML = rowsValue;
-            // --- Ranking hover tooltip ---
-            const rankTooltip = document.getElementById('rankTooltip');
+          boardQualityEl.innerHTML = rowsQuality;
+          boardValueEl.innerHTML = rowsValue;
+          // --- Ranking hover tooltip ---
+          const rankTooltip = document.getElementById("rankTooltip");
 
-            document.querySelectorAll('.rank-row').forEach(row => {
-                row.addEventListener('mousemove', ev => {
-                    const name = row.querySelector('.rank-name').textContent.trim();
-                    const cat = row.dataset.cat;
-                    const rating = row.querySelector('.rank-rating')?.textContent ?? '';
-                    const reviews = row.querySelector('.rank-reviews')?.textContent ?? '';
-                    const price = row.querySelector('.rank-price')?.textContent ?? '';
+          document.querySelectorAll(".rank-row").forEach((row) => {
+            row.addEventListener("mousemove", (ev) => {
+              const name = row.querySelector(".rank-name").textContent.trim();
+              const cat = row.dataset.cat;
+              const rating =
+                row.querySelector(".rank-rating")?.textContent ?? "";
+              const reviews =
+                row.querySelector(".rank-reviews")?.textContent ?? "";
+              const price = row.querySelector(".rank-price")?.textContent ?? "";
 
-                    // tooltip 内容（根据排行榜类型自动显示）
-                    let html = `<b>${name}</b><br>`;
-                    if (price) html += `Price: ${price}<br>`;
-                    if (rating) html += `Rating: ${rating}<br>`;
-                    if (reviews) html += `Reviews: ${reviews}`;
+              // tooltip 内容（根据排行榜类型自动显示）
+              let html = `<b>${name}</b><br>`;
+              if (price) html += `Price: ${price}<br>`;
+              if (rating) html += `Rating: ${rating}<br>`;
+              if (reviews) html += `Reviews: ${reviews}`;
 
-                    rankTooltip.innerHTML = html;
-                    rankTooltip.style.left = ev.pageX + 14 + 'px';
-                    rankTooltip.style.top = ev.pageY + 14 + 'px';
-                    rankTooltip.style.opacity = 1;
-                    rankTooltip.style.transform = 'translateY(0)';
-                });
-
-                row.addEventListener('mouseleave', () => {
-                    rankTooltip.style.opacity = 0;
-                    rankTooltip.style.transform = 'translateY(-6px)';
-                });
+              rankTooltip.innerHTML = html;
+              rankTooltip.style.left = ev.pageX + 14 + "px";
+              rankTooltip.style.top = ev.pageY + 14 + "px";
+              rankTooltip.style.opacity = 1;
+              rankTooltip.style.transform = "translateY(0)";
             });
+
+            row.addEventListener("mouseleave", () => {
+              rankTooltip.style.opacity = 0;
+              rankTooltip.style.transform = "translateY(-6px)";
+            });
+          });
         }
 
-        function flashRanking(game){
-            const key = encodeURIComponent(game.name);
-            const cat = game.cat;
-            const selector = `.rank-row[data-name="${key}"][data-cat="${cat}"]`;
-            const rows = document.querySelectorAll(selector);
-            rows.forEach(row=>{
-                row.classList.add('flash');
-                setTimeout(()=>row.classList.remove('flash'), 350);
-            });
+        function flashRanking(game) {
+          const key = encodeURIComponent(game.name);
+          const cat = game.cat;
+          const selector = `.rank-row[data-name="${key}"][data-cat="${cat}"]`;
+          const rows = document.querySelectorAll(selector);
+          rows.forEach((row) => {
+            row.classList.add("flash");
+            setTimeout(() => row.classList.remove("flash"), 350);
+          });
         }
+
+        // === Mouse tracking for controls ===
+        let isMouseOverViz = false;
+        const frame = q(".frame");
+        frame.addEventListener("mouseenter", () => {
+          isMouseOverViz = true;
+        });
+        frame.addEventListener("mouseleave", () => {
+          isMouseOverViz = false;
+        });
 
         // === Keyboard ===
         const dirs = {
-            ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down',
-            a:'left', d:'right', w:'up', s:'down',
-            A:'left', D:'right', W:'up', S:'down'
+          ArrowLeft: "left",
+          ArrowRight: "right",
+          ArrowUp: "up",
+          ArrowDown: "down",
+          a: "left",
+          d: "right",
+          w: "up",
+          s: "down",
+          A: "left",
+          D: "right",
+          W: "up",
+          S: "down",
         };
-        addEventListener('keydown', e => {
-            const nd = dirs[e.key];
-            if (nd) {
-                pac.dir = nd;
-                started = true;
+        addEventListener("keydown", (e) => {
+          const nd = dirs[e.key];
+          if (nd && isMouseOverViz) {
+            if (
+              [
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight",
+                "w",
+                "W",
+                "s",
+                "S",
+                "a",
+                "A",
+                "d",
+                "D",
+              ].includes(e.key)
+            ) {
+              e.preventDefault();
             }
+            pac.dir = nd;
+            started = true;
+          }
         });
 
         // === File input ===
-        d3.select('#file').on('change', (e)=>{
-            const f = e.target.files?.[0];
-            if(!f) return;
-            const r = new FileReader();
-            r.onload = ev => loadFromCsvString(ev.target.result);
-            r.readAsText(f);
+        d3.select("#file").on("change", (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = (ev) => loadFromCsvString(ev.target.result);
+          r.readAsText(f);
         });
 
         // Autoload if present
-        d3.csv('data/steam_games.csv').then(loadData, ()=>{});
+        d3.csv("data/steam_games.csv").then(loadData, () => {});
 
-        function loadFromCsvString(text){
-            loadData(d3.csvParse(text));
+        function loadFromCsvString(text) {
+          loadData(d3.csvParse(text));
         }
 
-        function pickCategory(genres){
-            if (!genres) return null;
-            const has = g => genres.includes(g);
-            if (has('Action')) return 'Action';
-            if (has('Indie')) return 'Indie';
-            return null;
+        function pickCategory(genres) {
+          if (!genres) return null;
+          const has = (g) => genres.includes(g);
+          if (has("Action")) return "Action";
+          if (has("Indie")) return "Indie";
+          return null;
         }
 
-        function loadData(rows){
-            // --- Parse & clean rows ---
-            const items = [];
-            for(const d of rows){
-
-                // --- Parse genres ---
-                let genres = [];
-                try{
-                    genres = JSON.parse(d.genres.replace(/'/g,'"'));
-                } catch(e){
-                    genres = [];
-                }
-
-                // require Action or Indie
-                if (!genres.includes("Action") && !genres.includes("Indie")) continue;
-
-                // require released
-                const released = d.is_released === "True" || d.is_released === true;
-                if (!released) continue;
-
-                // require reviews > 0
-                const reviews = +d.total_reviews || 0;
-                if (reviews <= 0) continue;
-                if (reviews <= 10) continue;
-
-
-                // parse price
-                let price = +d["price_initial (USD)"];
-                if (isNaN(price) || price >= 150) continue;
-
-                const rating = +d.positive_percentual || 0;
-
-                items.push({
-                    name: d.name || 'Unknown',
-                    genres,
-                    cat: genres.includes("Action") ? "Action" : "Indie",
-                    total_reviews: reviews,
-                    price,
-                    rating
-                });
+        function loadData(rows) {
+          // --- Parse & clean rows ---
+          const items = [];
+          for (const d of rows) {
+            // --- Parse genres ---
+            let genres = [];
+            try {
+              genres = JSON.parse(d.genres.replace(/'/g, '"'));
+            } catch (e) {
+              genres = [];
             }
 
-            const data = items.slice(0, 350);
+            // require Action or Indie
+            if (!genres.includes("Action") && !genres.includes("Indie"))
+              continue;
 
-            // --- Scales for scatter ---
-            const x = d3.scaleLinear()
-                .domain([0, Math.max(5, d3.max(data, d=>d.price) || 5)])
-                .range([0, innerW]);
-            const y = d3.scaleLinear()
-                .domain([0, 100])
-                .range([innerH, 0]);
-            const s = d3.scaleSqrt()
-                .domain(d3.extent(data, d=>d.total_reviews))
-                .range([5, 60]);
+            // require released
+            const released = d.is_released === "True" || d.is_released === true;
+            if (!released) continue;
 
-            const xAxis = d3.axisBottom(x).ticks(8).tickSizeOuter(0);
-            const yAxis = d3.axisLeft(y).ticks(6).tickSizeOuter(0);
+            // require reviews > 0
+            const reviews = +d.total_reviews || 0;
+            if (reviews <= 0) continue;
+            if (reviews <= 10) continue;
 
-            gXAxis.call(xAxis)
-                .call(g=>g.selectAll('path,line')
-                    .attr('shape-rendering','crispEdges')
-                    .attr('stroke','#2a3758'))
-                .call(g=>g.selectAll('text').attr('fill','#98a9cc'));
-            gYAxis.call(yAxis)
-                .call(g=>g.selectAll('path,line')
-                    .attr('shape-rendering','crispEdges')
-                    .attr('stroke','#2a3758'))
-                .call(g=>g.selectAll('text').attr('fill','#98a9cc'));
+            // parse price
+            let price = +d["price_initial (USD)"];
+            if (isNaN(price) || price >= 150) continue;
 
-            gPlot.append('text')
-                .attr('class','pix')
-                .attr('x', innerW)
-                .attr('y', innerH+30)
-                .attr('text-anchor','end')
-                .attr('fill','#cdd8f6')
-                .attr('font-size',10)
-                .text('PRICE (USD)');
-            gPlot.append('text')
-                .attr('class','pix')
-                .attr('x', -10)
-                .attr('y', -10)
-                .attr('text-anchor','start')
-                .attr('fill','#cdd8f6')
-                .attr('font-size',10)
-                .text('POSITIVE %');
+            const rating = +d.positive_percentual || 0;
 
-            // --- Nodes mapped to scatter positions ---
-            const nodes = data.map(d => ({
-                ...d,
-                x: Math.round(x(d.price)),
-                y: Math.round(y(d.rating)),
-                s: Math.round(s(d.total_reviews)),
-                eaten:false
-            }));
+            items.push({
+              name: d.name || "Unknown",
+              genres,
+              cat: genres.includes("Action") ? "Action" : "Indie",
+              total_reviews: reviews,
+              price,
+              rating,
+            });
+          }
 
-            // --- Draw pellets as circles (bubble plot) ---
-            const pellets = gPellets.selectAll('circle.pellet')
-                .data(nodes, d=>d.name + d.cat)
-                .join('circle')
-                .attr('class','pellet')
-                .attr('r', d=>d.s/2)
-                .attr('cx', d=>d.x)
-                .attr('cy', d=>d.y)
-                .attr('fill', d=>fillFor(d.cat))
-                // .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
-                .attr('stroke', d => d.cat === 'Action' ? '#ffffff' : '#000000')
-                .attr('stroke-width', 0.5)
+          const data = items.slice(0, 350);
 
-                .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
-                .attr('opacity', .98)
-                .on('mousemove', (ev, d) => {
-                    tooltip.html(
-                        `<div class='pix' style='font-size:10px'>
+          // --- Scales for scatter ---
+          const x = d3
+            .scaleLinear()
+            .domain([0, Math.max(5, d3.max(data, (d) => d.price) || 5)])
+            .range([0, innerW]);
+          const y = d3.scaleLinear().domain([0, 100]).range([innerH, 0]);
+          const s = d3
+            .scaleSqrt()
+            .domain(d3.extent(data, (d) => d.total_reviews))
+            .range([5, 60]);
+
+          const xAxis = d3.axisBottom(x).ticks(8).tickSizeOuter(0);
+          const yAxis = d3.axisLeft(y).ticks(6).tickSizeOuter(0);
+
+          gXAxis
+            .call(xAxis)
+            .call((g) =>
+              g
+                .selectAll("path,line")
+                .attr("shape-rendering", "crispEdges")
+                .attr("stroke", "#2a3758")
+            )
+            .call((g) => g.selectAll("text").attr("fill", "#98a9cc"));
+          gYAxis
+            .call(yAxis)
+            .call((g) =>
+              g
+                .selectAll("path,line")
+                .attr("shape-rendering", "crispEdges")
+                .attr("stroke", "#2a3758")
+            )
+            .call((g) => g.selectAll("text").attr("fill", "#98a9cc"));
+
+          gPlot
+            .append("text")
+            .attr("class", "pix")
+            .attr("x", innerW)
+            .attr("y", innerH + 30)
+            .attr("text-anchor", "end")
+            .attr("fill", "#cdd8f6")
+            .attr("font-size", 10)
+            .text("PRICE (USD)");
+          gPlot
+            .append("text")
+            .attr("class", "pix")
+            .attr("x", -10)
+            .attr("y", -10)
+            .attr("text-anchor", "start")
+            .attr("fill", "#cdd8f6")
+            .attr("font-size", 10)
+            .text("POSITIVE %");
+
+          // --- Nodes mapped to scatter positions ---
+          const nodes = data.map((d) => ({
+            ...d,
+            x: Math.round(x(d.price)),
+            y: Math.round(y(d.rating)),
+            s: Math.round(s(d.total_reviews)),
+            eaten: false,
+          }));
+
+          // --- Draw pellets as circles (bubble plot) ---
+          const pellets = gPellets
+            .selectAll("circle.pellet")
+            .data(nodes, (d) => d.name + d.cat)
+            .join("circle")
+            .attr("class", "pellet")
+            .attr("r", (d) => d.s / 2)
+            .attr("cx", (d) => d.x)
+            .attr("cy", (d) => d.y)
+            .attr("fill", (d) => fillFor(d.cat))
+            // .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
+            .attr("stroke", (d) => (d.cat === "Action" ? "#ffffff" : "#000000"))
+            .attr("stroke-width", 0.5)
+
+            .attr("filter", (d) =>
+              d.cat === "Action" ? "url(#glowPink)" : "url(#glowMint)"
+            )
+            .attr("opacity", 0.98)
+            .on("mousemove", (ev, d) => {
+              tooltip
+                .html(
+                  `<div class='pix' style='font-size:10px'>
                         <b>${escapeHtml(d.name)}</b><br>
                         Price: ${formatPrice(d.price)}<br>
                         Positive: ${d.rating.toFixed(1)}%<br>
                         Reviews: ${d.total_reviews}
                      </div>`
-                    )
-                        .style('left', (ev.pageX + 10) + 'px')
-                        .style('top', (ev.pageY + 10) + 'px')
-                        .style('opacity', 1)
-                        .style('transform','translateY(0)');
-                })
-                .on('mouseleave', () =>
-                    tooltip.style('opacity', 0).style('transform','translateY(-6px)')
-                );
+                )
+                .style("left", ev.pageX + 10 + "px")
+                .style("top", ev.pageY + 10 + "px")
+                .style("opacity", 1)
+                .style("transform", "translateY(0)");
+            })
+            .on("mouseleave", () =>
+              tooltip.style("opacity", 0).style("transform", "translateY(-6px)")
+            );
 
-            // --- Reset & HUD & Pause ---
-            q('#reset').onclick = () => reset();
+          // --- Reset & HUD & Pause ---
+          q("#reset").onclick = () => reset();
 
-            let paused = false;
+          let paused = false;
 
-            function reset() {
-                score = { total: 0, Action: 0, Indie: 0 };
-                updHUD();
-                eatenBy.Action.length = 0;
-                eatenBy.Indie.length = 0;
-                pellets
-                    .attr('display', null)
-                    .each(d => d.eaten = false);
-                pac.x = innerW / 2 | 0;
-                pac.y = innerH / 2 | 0;
-                pac.dir = 'right';
-                pac.phase = 0;
-                started = false;
-                paused = false;
-                q('#pauseIcon').textContent = '⏸';
-                updateRanking();
+          function reset() {
+            score = { total: 0, Action: 0, Indie: 0 };
+            updHUD();
+            eatenBy.Action.length = 0;
+            eatenBy.Indie.length = 0;
+            pellets.attr("display", null).each((d) => (d.eaten = false));
+            pac.x = (innerW / 2) | 0;
+            pac.y = (innerH / 2) | 0;
+            pac.dir = "right";
+            pac.phase = 0;
+            started = false;
+            paused = false;
+            q("#pauseIcon").textContent = "⏸";
+            updateRanking();
+          }
+
+          q("#pause").onclick = () => {
+            paused = !paused;
+            q("#pauseIcon").textContent = paused ? "▶" : "⏸";
+          };
+
+          // --- Game loop ---
+          let last = performance.now();
+          const eatPad = 2;
+
+          const gameLoop = d3.timer((now) => {
+            if (!started) {
+              pacPath.attr(
+                "d",
+                pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir)
+              );
+              return;
+            }
+            if (paused) {
+              pacPath.attr("opacity", 0.6);
+              return;
+            } else {
+              pacPath.attr("opacity", 1);
             }
 
-            q('#pause').onclick = () => {
-                paused = !paused;
-                q('#pauseIcon').textContent = paused ? '▶' : '⏸';
-            };
+            const dt = Math.min(32, now - last);
+            last = now;
 
-            // --- Game loop ---
-            let last = performance.now();
-            const eatPad = 2;
+            // Pixel-y chew
+            pac.phase += dt * 0.012;
+            const chew = Math.sin(pac.phase) * 0.5 + 0.5;
+            pac.mouth = (Math.round(chew * 6) / 6) * 0.4;
 
-            const gameLoop = d3.timer((now) => {
-                if (!started) {
-                    pacPath.attr('d', pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir));
-                    return;
+            const v = pac.speed * (dt / 16.6667);
+            if (pac.dir === "left") pac.x -= v;
+            if (pac.dir === "right") pac.x += v;
+            if (pac.dir === "up") pac.y -= v;
+            if (pac.dir === "down") pac.y += v;
+            const pad = 6;
+            pac.x = Math.max(pad, Math.min(innerW - pad, pac.x)) | 0;
+            pac.y = Math.max(pad, Math.min(innerH - pad, pac.y)) | 0;
+
+            // Eat detection (circle vs circle)
+            pellets.each(function (d) {
+              if (d.eaten) return;
+              const cx = d.x,
+                cy = d.y;
+              const rr = (pac.r + d.s / 2 + eatPad) ** 2;
+              const dx = pac.x - cx,
+                dy = pac.y - cy;
+              if (dx * dx + dy * dy <= rr) {
+                d.eaten = true;
+                score.total++;
+                score[d.cat]++;
+                eatenBy[d.cat].push(d);
+                updHUD();
+                d3.select(this).attr("display", "none");
+                burst(cx, cy, d.cat);
+                pacFlash();
+                updateRanking();
+                flashRanking(d);
+                // --- Check if all pellets eaten ---
+                if (score.total >= data.length) {
+                  const box = document.getElementById("endMessage");
+
+                  if (!box.classList.contains("show")) {
+                    box.classList.add("show");
+
+                    setTimeout(() => {
+                      box.classList.remove("show");
+                    }, 3000);
+                  }
                 }
-                if (paused) {
-                    pacPath.attr('opacity', 0.6);
-                    return;
-                } else {
-                    pacPath.attr('opacity', 1);
-                }
-
-                const dt = Math.min(32, now - last);
-                last = now;
-
-                // Pixel-y chew
-                pac.phase += dt * 0.012;
-                const chew = (Math.sin(pac.phase)*0.5+0.5);
-                pac.mouth = Math.round(chew*6)/6 * 0.4;
-
-                const v = pac.speed * (dt/16.6667);
-                if (pac.dir==='left') pac.x -= v;
-                if (pac.dir==='right') pac.x += v;
-                if (pac.dir==='up') pac.y -= v;
-                if (pac.dir==='down') pac.y += v;
-                const pad = 6;
-                pac.x = Math.max(pad, Math.min(innerW-pad, pac.x))|0;
-                pac.y = Math.max(pad, Math.min(innerH-pad, pac.y))|0;
-
-                // Eat detection (circle vs circle)
-                pellets.each(function(d){
-                    if (d.eaten) return;
-                    const cx=d.x, cy=d.y;
-                    const rr=(pac.r + d.s/2 + eatPad)**2;
-                    const dx=pac.x-cx, dy=pac.y-cy;
-                    if (dx*dx + dy*dy <= rr){
-                        d.eaten=true;
-                        score.total++;
-                        score[d.cat]++;
-                        eatenBy[d.cat].push(d);
-                        updHUD();
-                        d3.select(this).attr('display','none');
-                        burst(cx, cy, d.cat);
-                        pacFlash();
-                        updateRanking();
-                        flashRanking(d);
-                        // --- Check if all pellets eaten ---
-                        if (score.total >= data.length) {
-                            const box = document.getElementById('endMessage');
-
-                            if (!box.classList.contains('show')) {
-                                box.classList.add('show');
-
-                                setTimeout(() => {
-                                    box.classList.remove('show');
-                                }, 3000);
-                            }
-                        }
-                    }
-                });
-
-                pacPath.attr('d', pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir));
+              }
             });
 
-            // Initialize rankings once
-            updateRanking();
+            pacPath.attr(
+              "d",
+              pacPathD(pac.x, pac.y, pac.r, pac.mouth, pac.dir)
+            );
+          });
+
+          // Initialize rankings once
+          updateRanking();
         }
 
         // === Effects (bursts & pac) ===
-        function burst(x,y,cat){
-            const color = fillFor(cat);
-            const N = 9;
-            const data = d3.range(N).map(()=>({
-                x, y,
-                a:Math.random()*Math.PI*2,
-                v:1+Math.random()*2,
-                s:2+Math.random()*2
-            }));
-            const bursts = d3.select('#game').select('#bursts')
-                .selectAll(null).data(data)
-                .enter().append('rect')
-                .attr('x', d=>x-d.s/2)
-                .attr('y', d=>y-d.s/2)
-                .attr('width', d=>d.s)
-                .attr('height', d=>d.s)
-                .attr('fill', color)
-                .attr('opacity', .95)
-                .attr('shape-rendering','crispEdges');
-            bursts.transition().duration(300)
-                .attr('x', d=> x + Math.cos(d.a)*d.v*18)
-                .attr('y', d=> y + Math.sin(d.a)*d.v*18)
-                .attr('opacity', 0)
-                .remove();
+        function burst(x, y, cat) {
+          const color = fillFor(cat);
+          const N = 9;
+          const data = d3.range(N).map(() => ({
+            x,
+            y,
+            a: Math.random() * Math.PI * 2,
+            v: 1 + Math.random() * 2,
+            s: 2 + Math.random() * 2,
+          }));
+          const bursts = d3
+            .select("#game")
+            .select("#bursts")
+            .selectAll(null)
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("x", (d) => x - d.s / 2)
+            .attr("y", (d) => y - d.s / 2)
+            .attr("width", (d) => d.s)
+            .attr("height", (d) => d.s)
+            .attr("fill", color)
+            .attr("opacity", 0.95)
+            .attr("shape-rendering", "crispEdges");
+          bursts
+            .transition()
+            .duration(300)
+            .attr("x", (d) => x + Math.cos(d.a) * d.v * 18)
+            .attr("y", (d) => y + Math.sin(d.a) * d.v * 18)
+            .attr("opacity", 0)
+            .remove();
         }
-        function pacFlash(){
-            d3.select('#game path')
-                .interrupt()
-                .transition().duration(80).attr('stroke-width',2)
-                .transition().duration(140).attr('stroke-width',1.1);
-        }
-
-        function baseAngle(dir){
-            return dir==='right'?0:
-                dir==='left'?Math.PI:
-                    dir==='up'? -Math.PI/2:
-                        Math.PI/2;
-        }
-        function pacPathD(x,y,r,open,dir){
-            const base=baseAngle(dir);
-            const m=Math.max(.06,Math.min(.44,open));
-            const a0=base+m, a1=base-m;
-            const x0=(x+r*Math.cos(a0))|0,
-                y0=(y+r*Math.sin(a0))|0;
-            const x1=(x+r*Math.cos(a1))|0,
-                y1=(y+r*Math.sin(a1))|0;
-            return `M ${x|0} ${y|0} L ${x0} ${y0} A ${r} ${r} 0 1 1 ${x1} ${y1} Z`;
+        function pacFlash() {
+          d3.select("#game path")
+            .interrupt()
+            .transition()
+            .duration(80)
+            .attr("stroke-width", 2)
+            .transition()
+            .duration(140)
+            .attr("stroke-width", 1.1);
         }
 
-        function updHUD(){
-            scoreEl.total.textContent=score.total;
-            scoreEl.action.textContent=score.Action;
-            scoreEl.indie.textContent=score.Indie;
+        function baseAngle(dir) {
+          return dir === "right"
+            ? 0
+            : dir === "left"
+            ? Math.PI
+            : dir === "up"
+            ? -Math.PI / 2
+            : Math.PI / 2;
+        }
+        function pacPathD(x, y, r, open, dir) {
+          const base = baseAngle(dir);
+          const m = Math.max(0.06, Math.min(0.44, open));
+          const a0 = base + m,
+            a1 = base - m;
+          const x0 = (x + r * Math.cos(a0)) | 0,
+            y0 = (y + r * Math.sin(a0)) | 0;
+          const x1 = (x + r * Math.cos(a1)) | 0,
+            y1 = (y + r * Math.sin(a1)) | 0;
+          return `M ${x | 0} ${
+            y | 0
+          } L ${x0} ${y0} A ${r} ${r} 0 1 1 ${x1} ${y1} Z`;
+        }
+
+        function updHUD() {
+          scoreEl.total.textContent = score.total;
+          scoreEl.action.textContent = score.Action;
+          scoreEl.indie.textContent = score.Indie;
         }
 
         // === Debug button ===
-        q('#debug').onclick = () => {
-            console.log('Eaten Action games:', eatenBy.Action);
-            console.log('Eaten Indie games:', eatenBy.Indie);
-            alert('Eaten games logged to console.\nRankings are shown on the right.');
+        q("#debug").onclick = () => {
+          console.log("Eaten Action games:", eatenBy.Action);
+          console.log("Eaten Indie games:", eatenBy.Indie);
+          alert(
+            "Eaten games logged to console.\nRankings are shown on the right."
+          );
         };
 
         // === Minimal runtime self-tests (console) ===
-        console.assert(document.querySelector('#game'), '[Self-test] scatter svg exists');
-
-    })();
-</script>
-</body>
+        console.assert(
+          document.querySelector("#game"),
+          "[Self-test] scatter svg exists"
+        );
+      })();
+    </script>
+  </body>
 </html>
-
