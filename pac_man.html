@@ -90,7 +90,7 @@
         .hint {
             position:absolute;
             left:10px;
-            bottom:10px;
+            bottom:-10px;
             color:var(--muted);
             font-size:12px;
         }
@@ -609,7 +609,7 @@
                 .range([innerH, 0]);
             const s = d3.scaleSqrt()
                 .domain(d3.extent(data, d=>d.total_reviews))
-                .range([8, 22]);
+                .range([5, 60]);
 
             const xAxis = d3.axisBottom(x).ticks(8).tickSizeOuter(0);
             const yAxis = d3.axisLeft(y).ticks(6).tickSizeOuter(0);
@@ -660,6 +660,10 @@
                 .attr('cx', d=>d.x)
                 .attr('cy', d=>d.y)
                 .attr('fill', d=>fillFor(d.cat))
+                // .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
+                .attr('stroke', d => d.cat === 'Action' ? '#ffffff' : '#000000')
+                .attr('stroke-width', 0.5)
+
                 .attr('filter', d=> d.cat==='Action' ? 'url(#glowPink)' : 'url(#glowMint)')
                 .attr('opacity', .98)
                 .on('mousemove', (ev, d) => {
