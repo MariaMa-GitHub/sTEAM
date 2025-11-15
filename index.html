@@ -1,165 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>sTeam visualization</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: ui-monospace, "Courier New", monospace;
+        background: #000;
+        color: #c7d5e0;
+      }
+
+      .main-header {
+        background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .main-header h1 {
+        color: #66c0f4;
+        font-family: "Press Start 2P", monospace;
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 20px rgba(102, 192, 244, 0.5);
+      }
+
+      .main-header p {
+        color: #8f98a0;
+        font-size: 1rem;
+      }
+
+      .viz-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .viz-section {
+        background: rgba(14, 18, 32, 0.8);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(102, 192, 244, 0.1);
+      }
+
+      .viz-section h2 {
+        color: #66c0f4;
+        font-family: "Press Start 2P", monospace;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #66c0f4;
+      }
+
+      .viz-description {
+        color: #acb2b8;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+
+      .viz-iframe {
+        width: 100%;
+        height: 900px;
+        border: none;
+        border-radius: 8px;
+        background: #000;
+      }
+
+      .viz-placeholder {
+        background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
+        border: 2px dashed #66c0f4;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        color: #8f98a0;
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .viz-placeholder h3 {
+        color: #66c0f4;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 2rem;
+        color: #8f98a0;
+        font-size: 0.9rem;
+      }
+
+      /* Indie vs AAA Visualization Styles */
+      .indie-vs-aaa-container {
+        padding: 2rem 0;
+        color: #c7d5e0;
+      }
+
+      .indie-vs-aaa-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .indie-vs-aaa-title {
+        font-family: "Press Start 2P", monospace;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .indie-text {
+        color: #ff6b9d;
+        text-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
+      }
+
+      .vs-text {
+        color: #66c0f4;
+        font-size: 1rem;
+        text-shadow: 0 0 15px rgba(102, 192, 244, 0.7);
+      }
+
+      .aaa-text {
+        color: #4ecdc4;
+        text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+      }
+
+      .stats-bars {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        gap: 1rem;
+      }
+
+      .stat-bar {
+        flex: 1;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: 2px solid rgba(102, 192, 244, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        min-width: 80px;
+        background: rgba(14, 18, 32, 0.6);
+        overflow: hidden;
+      }
+
+      .stat-bar-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0%;
+        border-radius: 6px;
+        transition: width 0.3s ease;
+        z-index: 0;
+      }
+
+      .indie-bar .stat-bar-fill {
+        background: linear-gradient(
+          90deg,
+          rgba(255, 107, 157, 0.5),
+          rgba(255, 139, 171, 0.5)
+        );
+      }
+
+      .indie-bar {
+        border-color: #ff6b9d;
+      }
+
+      .aaa-bar .stat-bar-fill {
+        background: linear-gradient(
+          90deg,
+          rgba(78, 205, 196, 0.5),
+          rgba(109, 213, 237, 0.5)
+        );
+      }
+
+      .aaa-bar {
+        border-color: #4ecdc4;
+      }
+
+      .stat-bar.dominant {
+        border-color: #66c0f4;
+        box-shadow: 0 0 20px rgba(102, 192, 244, 0.6);
+      }
+
+      .stat-number {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        z-index: 1;
+      }
+
+      .radar-charts {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .chart-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 400px;
+      }
+
+      .radar-charts svg {
+        display: block;
+        margin: 0 auto;
+        background: rgba(27, 40, 56, 0.5);
+        border-radius: 8px;
+        border: 1px solid rgba(102, 192, 244, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .radar-charts svg g {
+        transform-origin: center;
+      }
+
+      .radar-axis {
+        stroke: rgba(102, 192, 244, 0.3);
+        stroke-width: 1;
+      }
+
+      .radar-grid {
+        stroke: rgba(102, 192, 244, 0.15);
+        stroke-width: 1;
+      }
+
+      .radar-area {
+        fill-opacity: 0.3;
+        stroke-width: 2;
+      }
+
+      .radar-area.smooth-transition {
+        transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .radar-point {
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .radar-point.smooth-transition {
+        transition: cx 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+          cy 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .radar-point:hover {
+        r: 8;
+        filter: drop-shadow(0 0 8px rgba(102, 192, 244, 0.8));
+      }
+
+      .radar-label {
+        font-size: 18px;
+        fill: #66c0f4;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .radar-label:hover {
+        font-size: 22px;
+        filter: drop-shadow(0 0 8px rgba(102, 192, 244, 0.8));
+      }
+
+      .year-selector {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .year-selector h4 {
+        margin: 0;
+        color: #66c0f4;
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.8rem;
+      }
+
+      .year-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .year-button {
+        padding: 0.5rem 1rem;
+        background: rgba(14, 18, 32, 0.8);
+        color: #66c0f4;
+        border: 2px solid rgba(102, 192, 244, 0.3);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: ui-monospace, "Courier New", monospace;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .year-button:hover {
+        background: rgba(102, 192, 244, 0.2);
+        border-color: #66c0f4;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 192, 244, 0.4);
+      }
+
+      .year-button.active {
+        background: #66c0f4;
+        color: #000;
+        border-color: #66c0f4;
+        box-shadow: 0 0 20px rgba(102, 192, 244, 0.6);
+      }
+
+      /* Tooltip styles */
+      .tooltip {
+        position: absolute;
+        background: rgba(14, 18, 32, 0.95);
+        color: #c7d5e0;
+        padding: 12px;
+        border-radius: 8px;
+        border: 2px solid #66c0f4;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        font-size: 12px;
+        font-family: ui-monospace, "Courier New", monospace;
+        z-index: 1000;
+        pointer-events: none;
+      }
+
+      @media (max-width: 768px) {
+        .indie-vs-aaa-title {
+          font-size: 1rem;
         }
 
-        body {
-            font-family: ui-monospace, 'Courier New', monospace;
-            background: #000;
-            color: #c7d5e0;
+        .radar-charts {
+          flex-direction: column;
         }
 
-        .main-header {
-            background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        .chart-container {
+          min-width: 100%;
         }
 
-        .main-header h1 {
-            color: #66c0f4;
-            font-family: "Press Start 2P", monospace;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 20px rgba(102, 192, 244, 0.5);
+        .stats-bars {
+          flex-direction: column;
         }
-
-        .main-header p {
-            color: #8f98a0;
-            font-size: 1rem;
-        }
-
-        .viz-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .viz-section {
-            background: rgba(14, 18, 32, 0.8);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 3rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(102, 192, 244, 0.1);
-        }
-
-        .viz-section h2 {
-            color: #66c0f4;
-            font-family: "Press Start 2P", monospace;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #66c0f4;
-        }
-
-        .viz-description {
-            color: #acb2b8;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-
-        .viz-iframe {
-            width: 100%;
-            height: 900px;
-            border: none;
-            border-radius: 8px;
-            background: #000;
-        }
-
-        .viz-placeholder {
-            background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
-            border: 2px dashed #66c0f4;
-            border-radius: 8px;
-            padding: 3rem;
-            text-align: center;
-            color: #8f98a0;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .viz-placeholder h3 {
-            color: #66c0f4;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: #8f98a0;
-            font-size: 0.9rem;
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="main-header">
+      <h1>🎮 STEAM GAMES ANALYSIS</h1>
+      <p>Interactive Data Visualization Prototype V1</p>
+    </div>
 
-<div class="main-header">
-    <h1>🎮 STEAM GAMES ANALYSIS</h1>
-    <p>Interactive Data Visualization Prototype V1</p>
-</div>
-
-<div class="viz-container">
-
-    <div class="viz-section">
+    <div class="viz-container">
+      <div class="viz-section">
         <h2>Visualization 1: Pac-Man Interactive Scatter Plot</h2>
         <p class="viz-description">
-            <strong>Interactive game visualization by sTeam.</strong> Play as Pac-Man to explore Steam games! 
-            Each pellet represents a game positioned by price (X-axis) and positive review percentage (Y-axis). 
-            Pink pellets are Action games, mint pellets are Indie games. The right panel shows aggregated statistics.
-            <br><strong>Controls: Use Arrow Keys or WASD to move.</strong>
+          Play as Pac-Man and explore Steam games! Each dot is a game - X is
+          price, Y is positive review percentage. Pink dots are Action games,
+          green ones are Indie. Stats show up on the right when you collect
+          games.
+          <br />Arrow keys or WASD to move.
         </p>
-        
-        <iframe src="pacman.html" class="viz-iframe" title="Pac-Man Steam Game Visualization"></iframe>
-    </div>
 
-    <div class="viz-section">
-        <h2>Visualization 2: [Second Visualization]</h2>
-        <p class="viz-description">
-            This section will contain the second D3 visualization exploring different aspects of the Steam games dataset.
-        </p>
-        <div class="viz-placeholder" id="game-lobby" style="height: 100%; width: 100%"></div>
-    </div>
+        <iframe
+          src="pacman.html"
+          class="viz-iframe"
+          title="Pac-Man Steam Game Visualization"
+        ></iframe>
+      </div>
 
-    <div class="viz-section">
-        <h2>Visualization 3: [Novel Design]</h2>
+      <div class="viz-section">
+        <h2>Visualization 2: Game Lobby</h2>
         <p class="viz-description">
-            This section showcases one of our novel visualization designs, providing unique insights into the Steam games data.
+          Multiplayer vs non-multiplayer games. Hover over the left side to see
+          more details.
         </p>
-        <div class="viz-placeholder">
-            <h3> Novel Design</h3>
-            <p>Custom visualization design will be implemented here</p>
-            <p style="margin-top: 1rem; font-size: 0.9rem;">
-                This should be an innovative/creative visualization approach not commonly used
-            </p>
+        <div
+          class="viz-placeholder"
+          id="game-lobby"
+          style="height: 100%; width: 100%"
+        ></div>
+      </div>
+
+      <div class="viz-section">
+        <h2>Visualization 3: Indie vs AAA</h2>
+        <p class="viz-description">
+          Compare indie and AAA games on different metrics. Hover over the icons
+          around the radar charts to see stats. Use the year buttons at the
+          bottom to filter by release year.
+        </p>
+
+        <div class="indie-vs-aaa-container">
+          <div class="indie-vs-aaa-header">
+            <h3 class="indie-vs-aaa-title">
+              <span class="indie-text">INDIE</span>
+              <span class="vs-text">VS</span>
+              <span class="aaa-text">AAA</span>
+            </h3>
+          </div>
+
+          <div class="stats-bars">
+            <div class="stat-bar indie-bar">
+              <div class="stat-bar-fill"></div>
+              <div class="stat-number" id="indie-stat">---</div>
+            </div>
+            <div class="stat-bar aaa-bar">
+              <div class="stat-bar-fill"></div>
+              <div class="stat-number" id="aaa-stat">---</div>
+            </div>
+          </div>
+
+          <div class="radar-charts">
+            <div class="chart-container">
+              <svg id="indie-radar" width="400" height="400"></svg>
+            </div>
+            <div class="chart-container">
+              <svg id="aaa-radar" width="400" height="400"></svg>
+            </div>
+          </div>
+
+          <div class="year-selector">
+            <h4>Select Year:</h4>
+            <div class="year-buttons" id="year-buttons">
+              <!-- Year buttons will be generated by JavaScript -->
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
-</div>
-
-<div class="footer">
-    <p>Steam Games Data Visualization Project | Prototype V1 Submission</p>
-    <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+    <div class="footer">
+      <p>Steam Games Data Visualization Project | Prototype V1 Submission</p>
+      <p style="margin-top: 0.5rem; font-size: 0.8rem">
         Team Members: Iris, Joshua, Xiran, Amanda, Maria
-    </p>
-</div>
+      </p>
+    </div>
 
-<!-- d3 -->
-<script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- d3 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 
-<script src="js/game-lobby.js"></script>
-
-</body>
+    <script src="js/game-lobby.js"></script>
+    <script src="js/indie-vs-aaa.js"></script>
+  </body>
 </html>
