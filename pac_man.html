@@ -4,7 +4,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23FFD24A%22/></svg>">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Steam Dataset · Playable D3 Pac-Man — Bubble Plot + RPG Leaderboard</title>
+    <title>Discovering Value: Steam Price vs Review Trends</title>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <!-- Pixel font for true arcade vibe -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -59,7 +59,15 @@
             gap:12px;
             color:var(--ink);
         }
-
+        .main-title {
+            text-align: center;
+            font-size: 22px;
+            margin: 12px 0 20px;
+            color: #f6f7ff;
+            text-shadow:
+                    0 0 8px rgba(255,255,255,0.4),
+                    0 0 16px rgba(255,210,74,0.4);
+        }
         .hud {
             position:absolute;
             left:10px;
@@ -245,6 +253,21 @@
             font-size:8px;
             color:var(--muted);
         }
+        .rank-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(15, 20, 35, 0.9);
+            color: #e7f0ff;
+            padding: 6px 8px;
+            border: 1px solid #2b3b5a;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: "Press Start 2P", monospace;
+            opacity: 0;
+            transition: opacity .12s ease, transform .12s ease;
+            white-space: nowrap;
+            z-index: 99999;
+        }
 
         .cat-dot {
             width:8px;
@@ -269,6 +292,7 @@
 </head>
 <body>
 <div id="wrap">
+    <h1 class="main-title pix">STEAM DATASET — PLAYABLE PAC-MAN VISUALIZATION</h1>
     <div class="frame">
         <div class="hud">
             <span class="pix">TOTAL</span>
@@ -314,6 +338,7 @@
         </div>
 
         <div id="tooltip" class="tooltip"></div>
+        <div id="rankTooltip" class="rank-tooltip"></div>
     </div>
 </div>
 
@@ -504,6 +529,35 @@
 
             boardQualityEl.innerHTML = rowsQuality;
             boardValueEl.innerHTML = rowsValue;
+            // --- Ranking hover tooltip ---
+            const rankTooltip = document.getElementById('rankTooltip');
+
+            document.querySelectorAll('.rank-row').forEach(row => {
+                row.addEventListener('mousemove', ev => {
+                    const name = row.querySelector('.rank-name').textContent.trim();
+                    const cat = row.dataset.cat;
+                    const rating = row.querySelector('.rank-rating')?.textContent ?? '';
+                    const reviews = row.querySelector('.rank-reviews')?.textContent ?? '';
+                    const price = row.querySelector('.rank-price')?.textContent ?? '';
+
+                    // tooltip 内容（根据排行榜类型自动显示）
+                    let html = `<b>${name}</b><br>`;
+                    if (price) html += `Price: ${price}<br>`;
+                    if (rating) html += `Rating: ${rating}<br>`;
+                    if (reviews) html += `Reviews: ${reviews}`;
+
+                    rankTooltip.innerHTML = html;
+                    rankTooltip.style.left = ev.pageX + 14 + 'px';
+                    rankTooltip.style.top = ev.pageY + 14 + 'px';
+                    rankTooltip.style.opacity = 1;
+                    rankTooltip.style.transform = 'translateY(0)';
+                });
+
+                row.addEventListener('mouseleave', () => {
+                    rankTooltip.style.opacity = 0;
+                    rankTooltip.style.transform = 'translateY(-6px)';
+                });
+            });
         }
 
         function flashRanking(game){
@@ -583,8 +637,7 @@
 
                 // parse price
                 let price = +d["price_initial (USD)"];
-                if (isNaN(price) || price <= 0) continue;
-                if (price >= 150) continue;
+                if (isNaN(price) || price >= 150) continue;
 
                 const rating = +d.positive_percentual || 0;
 
