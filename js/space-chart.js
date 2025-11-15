@@ -297,7 +297,7 @@ class SpaceChart {
       .attr("font-family", "sans-serif")
       .attr("font-size", "20px");
 
-    // legend
+        // legend
     const legendGroup = vis.svg.append("g")
       .attr("transform", `translate(${spaceWidth - 180}, 20)`);
 
@@ -384,9 +384,11 @@ class SpaceChart {
       .text("Opacity = Reviews");
 
     // draw teh spaceship
+
+
     vis.spaceshipGraphic = vis.svg
       .append("polygon")
-      .attr("points", "0,-20 12,10 0,5 -12,10") // game spaceship arrow
+      .attr("points", "0,-20 12,10 0,5 -12,10")
       .attr("fill", "#fff")
       .attr("transform", `translate(${spaceWidth / 2}, ${spaceHeight / 2})`);
 

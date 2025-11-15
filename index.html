@@ -23,6 +23,28 @@
         min-height: 100vh;
       }
 
+      .page-header {
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        border-bottom: 3px solid #66c0f4;
+        box-shadow: 0 4px 20px rgba(102, 192, 244, 0.3);
+      }
+
+      .page-header h1 {
+        color: #66c0f4;
+        font-family: "Press Start 2P", monospace;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 20px rgba(102, 192, 244, 0.8);
+      }
+
+      .page-header p {
+        color: #8f98a0;
+        font-size: 1rem;
+        margin: 0;
+      }
+
       /* Arcade Cabinet Container */
       .arcade-machine {
         max-width: 1600px;
@@ -602,6 +624,9 @@
     </style>
   </head>
   <body>
+    <div class="page-header">
+      <h1>🎮 Exploring STEAM Games</h1>
+    </div>
     <div class="arcade-machine">
       <div class="arcade-screen">
         <div class="screen-glow"></div>
@@ -621,14 +646,13 @@
             LEVEL <span id="current-level">1</span> / 5
           </div>
           <div class="chapter-header-content">
-            <div id="chapter-title">CHAPTER 1: INDIE VS AAA</div>
+            <div id="chapter-title">CHAPTER 1: THE GAME LANDSCAPE</div>
             <div id="chapter-description">
-              The main question: which is more popular? Compare indie and AAA
-              games across revenue, ratings, player counts, and reviews. Each
-              axis tells a different story.
+              Every game exists somewhere between price and quality. Pink dots
+              are Action games, green dots are Indie games. Navigate this space
+              to see where games cluster.
               <span class="controls-text"
-                >Controls: Hover over metric icons. Use year buttons to
-                filter.</span
+                >Controls: Arrow keys or WASD to move.</span
               >
             </div>
           </div>
@@ -642,8 +666,34 @@
           </div>
         </div>
 
-        <!-- Chapter 1: Indie vs AAA (The Main Question) -->
+        <!-- Chapter 1: The Game Landscape (Setup) -->
         <div class="chapter-container active" id="chapter-1">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="pac_man.html"
+                title="Pac-Man Steam Game Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 2: The Price War (Rising Action) -->
+        <div class="chapter-container" id="chapter-2">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="battle.html"
+                title="Peak Battle Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 3: Indie vs AAA (Climax) -->
+        <div class="chapter-container" id="chapter-3">
           <div class="chapter-header"></div>
           <div class="viz-content">
             <div class="viz-panel">
@@ -688,6 +738,7 @@
             </div>
           </div>
         </div>
+    
 
         <!-- Chapter 2: The Game Landscape -->
         <div class="chapter-container" id="chapter-2">
@@ -714,6 +765,7 @@
             </div>
           </div>
         </div>
+
 
         <!-- Chapter 4: The Social Layer -->
         <div class="chapter-container" id="chapter-4">
@@ -754,35 +806,35 @@
     <script src="js/indie-vs-aaa.js"></script>
 
     <script>
-      // Chapter Navigation
+    // Chapter Navigation
       let currentChapter = 1;
       const totalChapters = 5;
 
       const chapterData = {
         1: {
-          title: "CHAPTER 1: INDIE VS AAA",
+          title: "CHAPTER 1: THE GAME LANDSCAPE",
           description:
-            'The main question: which is more popular? Compare indie and AAA games across revenue, ratings, player counts, and reviews. Each axis tells a different story. Filter by year to see how the landscape shifts over time. <span class="controls-text">Controls: Hover over metric icons. Use year buttons to filter.</span>',
+            'Every game exists somewhere between price and quality. Pink dots are Action games, green dots are Indie games. Navigate this space to see where games cluster. <span class="controls-text">Controls: Arrow keys or WASD to move.</span>',
         },
         2: {
-          title: "CHAPTER 2: THE GAME LANDSCAPE",
+          title: "CHAPTER 2: THE PRICE WAR",
           description:
-            'To understand popularity, we first need context. Every game lives somewhere in the space between price and quality. Pink dots are Action games, green dots are Indie games. Navigate the field to discover patterns. <span class="controls-text">Controls: Arrow keys or WASD to move.</span>',
+            'Price matters. Where do games cluster? Studio games by price range (pink Strike cards) face off against indie games (green Defend card). The arrow points to where most games land. This tension sets up the central question. <span class="controls-text">Controls: Click pink Strike cards to attack.</span>',
         },
         3: {
-          title: "CHAPTER 3: THE PRICE WAR",
+          title: "CHAPTER 3: INDIE VS AAA",
           description:
-            'Price is a key factor. Where do games cluster? Studio games by price range (pink Strike cards) face off against indie games (green Defend card). The arrow reveals where most games land in the market. <span class="controls-text">Controls: Click pink Strike cards to attack.</span>',
+            'The answer: which is more popular? Compare indie and AAA games across revenue, ratings, player counts, and reviews. Each axis reveals a different dimension of the battle. Filter by year to see how the landscape shifts over time. <span class="controls-text">Controls: Hover over metric icons. Use year buttons to filter.</span>',
         },
         4: {
           title: "CHAPTER 4: THE SOCIAL LAYER",
           description:
-            "Games aren't just products—they're spaces where players meet. Compare multiplayer (left) vs solo experiences (right). Red dots are Indie, blue are Studio. Dive deeper to see cooperative vs competitive dynamics. <span class=\"controls-text\">Controls: Hover to highlight. Click left side for details.</span>",
+            "What does popularity look like? Games aren't just products—they're spaces where players meet. Compare multiplayer (left) vs solo experiences (right). Red dots are Indie, blue are Studio. See how the answer plays out in social engagement. <span class=\"controls-text\">Controls: Hover to highlight. Click left side for details.</span>",
         },
         5: {
           title: "CHAPTER 5: THE GENRE UNIVERSE",
           description:
-            'Finally, explore the genre space: navigate a universe where games cluster by genre. Node size shows player activity, opacity reveals review sentiment. Pink nodes are Studio games, teal are Indie. Each cluster tells a story about what players love. <span class="controls-text">Controls: Hover over visualization, then use arrow keys to navigate.</span>',
+            'Navigate the genre space: games cluster by genre like stars in a galaxy. Node size shows player activity, opacity reveals review sentiment. Pink nodes are Studio games, teal are Indie. Each cluster tells its own story. <span class="controls-text">Controls: Hover over visualization, then use arrow keys to navigate.</span>',
         },
       };
 
@@ -819,7 +871,7 @@
           chapterNum === totalChapters;
       }
 
-      // Button navigation
+    // Button navigation
       document.getElementById("next-btn").addEventListener("click", () => {
         if (currentChapter < totalChapters) {
           showChapter(currentChapter + 1);
@@ -832,7 +884,7 @@
         }
       });
 
-      // Chapter selector buttons
+    // Chapter selector buttons
       document.querySelectorAll(".chapter-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           const chapterNum = parseInt(btn.dataset.chapter);
@@ -840,7 +892,7 @@
         });
       });
 
-      // Keyboard navigation
+    // Keyboard navigation
       document.addEventListener("keydown", (e) => {
         if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
           if (currentChapter < totalChapters) {
@@ -861,7 +913,7 @@
         }
       });
 
-      // Initialize on load
+    // Initialize on load
       showChapter(1);
     </script>
   </body>

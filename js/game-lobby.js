@@ -87,29 +87,20 @@ nonIndieLegend.append("image")
 tooltip = d3.select(".main-lobby").append('div')
     .attr('class', "tooltip")
 
-// Create a 'data' property under the window object
-// to store the data
 Object.defineProperty(window, 'data', {
-	// data getter
 	get: function() { return _data; },
-	// data setter
 	set: function(value) {
 		_data = value;
-        // update the visualization each time the data property is set by using the equal sign (e.g. data = [])
-		updateVisualization()
+		updateVisualization();
 	}
 });
 
-// Load CSV file
 function loadData() {
 	d3.csv("data/games.csv").then(csv=> {
-
-		// Store csv data in global variable
 		data = csv;
 	});
 }
 
-// Initialize data
 loadData();
 
 function changeSelection(cooperativeData, competitiveData) {
@@ -129,8 +120,6 @@ function changeSelection(cooperativeData, competitiveData) {
     // Enter
     leftPlayer.enter().append("image")
         .attr("class", "left-player")
-
-    // Enter and Update
         .merge(leftPlayer)
         .attr("x", (d, index) => (index % 30) * width / 60 - 15)
         .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -143,7 +132,6 @@ function changeSelection(cooperativeData, competitiveData) {
                 return icons[1]
         });
 
-    // Exit
     leftPlayer.exit().remove();
 
     let rightPlayer = rightTeam.selectAll("image")
@@ -152,8 +140,6 @@ function changeSelection(cooperativeData, competitiveData) {
     // Enter
     rightPlayer.enter().append("image")
         .attr("class", "right-player")
-
-    // Enter and Update
         .merge(rightPlayer)
         .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
         .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -166,7 +152,6 @@ function changeSelection(cooperativeData, competitiveData) {
                 return icons[1]
         });
 
-    // Exit
     rightPlayer.exit().remove();
 
     svg.append("text")
@@ -196,7 +181,6 @@ function changeSelection(cooperativeData, competitiveData) {
     });
 }
 
-// Render visualization
 function updateVisualization() {
     let multiplayerData = data.filter(d => d.categories.includes('Multi-player'));
     let nonmultiplayerData = data.filter(d => (d.categories.includes('Multi-player')) == false);
@@ -256,8 +240,6 @@ function updateVisualization() {
 	// Enter
 	leftPlayer.enter().append("image")
 		.attr("class", "left-player")
-
-	// Enter and Update
 		.merge(leftPlayer)
 		.attr("x", (d, index) => (index % 30) * width / 60 - 15)
 		.attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -270,7 +252,6 @@ function updateVisualization() {
                 return icons[1]
         });
 
-	// Exit
 	leftPlayer.exit().remove();
 
     let rightPlayer = rightTeam.selectAll("image")
@@ -279,8 +260,6 @@ function updateVisualization() {
 	// Enter
 	rightPlayer.enter().append("image")
 		.attr("class", "right-player")
-
-	// Enter and Update
 		.merge(rightPlayer)
 		.attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
 		.attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -293,7 +272,6 @@ function updateVisualization() {
                 return icons[1]
         });
 
-	// Exit
 	rightPlayer.exit().remove();
 
     leftTeam.append("rect")
