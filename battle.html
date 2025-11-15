@@ -1,392 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Peak Battle Visualization</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        body {
-            font-family: 'Press Start 2P', monospace;
-            background: #0e1220;
-            color: #66c0f4;
-            margin: 0;
-            padding: 0;
-        }
+      body {
+        font-family: "Press Start 2P", monospace;
+        background: #0e1220;
+        color: #66c0f4;
+        margin: 0;
+        padding: 0;
+      }
 
-        .card {
-            stroke-width: 3;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+      .card {
+        stroke-width: 3;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
 
-        .card.strike {
-            fill: #ff6b9d;
-            stroke: #ff3d7f;
-        }
+      .card.strike {
+        fill: #ff6b9d;
+        stroke: #ff3d7f;
+      }
 
-        .card.defend {
-            fill: #00ff88;
-            stroke: #00cc6a;
-        }
+      .card.defend {
+        fill: #00ff88;
+        stroke: #00cc6a;
+      }
 
-        .card:hover {
-            filter: brightness(1.3);
-            stroke-width: 5;
-        }
+      .card:hover {
+        filter: brightness(1.3);
+        stroke-width: 5;
+      }
 
-        .card-text {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 14px;
-            fill: #000;
-            text-anchor: middle;
-            pointer-events: none;
-            font-weight: bold;
-        }
+      .card-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 14px;
+        fill: #000;
+        text-anchor: middle;
+        pointer-events: none;
+        font-weight: bold;
+      }
 
-        .game-count {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 32px;
-            fill: #66c0f4;
-            text-anchor: middle;
-        }
+      .game-count {
+        font-family: "Press Start 2P", monospace;
+        font-size: 32px;
+        fill: #66c0f4;
+        text-anchor: middle;
+      }
 
-        .peak-label {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
-            fill: #ffd700;
-            text-anchor: middle;
-        }
+      .peak-label {
+        font-family: "Press Start 2P", monospace;
+        font-size: 16px;
+        fill: #ffd700;
+        text-anchor: middle;
+      }
 
-        .axis-label {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
-            fill: #c7d5e0;
-        }
+      .axis-label {
+        font-family: "Press Start 2P", monospace;
+        font-size: 12px;
+        fill: #c7d5e0;
+      }
 
-        .price-label {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
-            fill: #8f98a0;
-            text-anchor: middle;
-        }
+      .price-label {
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        fill: #8f98a0;
+        text-anchor: middle;
+      }
 
-        .legend-text {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
-            fill: #c7d5e0;
-        }
+      .legend-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        fill: #c7d5e0;
+      }
 
-        .info-box {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(14, 18, 32, 0.95);
-            border: 2px solid #66c0f4;
-            border-radius: 8px;
-            padding: 15px;
-            font-size: 0.6rem;
-            line-height: 1.8;
-            max-width: 400px;
-        }
+      .info-box {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(14, 18, 32, 0.95);
+        border: 2px solid #66c0f4;
+        border-radius: 8px;
+        padding: 15px;
+        font-size: 0.6rem;
+        line-height: 1.8;
+        max-width: 400px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <svg
+      id="battle-viz"
+      width="100%"
+      height="100%"
+      viewBox="0 0 1000 600"
+    ></svg>
+    <div class="info-box" id="info">
+      <div style="color: #66c0f4; margin-bottom: 5px">📊 PEAK BATTLE</div>
+      <div style="font-size: 0.55rem">
+        Click pink Strike cards to attack green Defend card!
+      </div>
+    </div>
 
-<svg id="battle-viz" width="100%" height="100%" viewBox="0 0 1000 600"></svg>
-<div class="info-box" id="info">
-    <div style="color: #66c0f4; margin-bottom: 5px;">📊 PEAK BATTLE</div>
-    <div style="font-size: 0.55rem;">Click pink Strike cards to attack green Defend card!</div>
-</div>
+    <script>
+      const svg = d3.select("#battle-viz");
 
-<script>
-const svg = d3.select('#battle-viz');
+      let data = null;
+      let defendHealth = 400;
 
-let data = null;
-let defendHealth = 400;
+      // Card layout - SHIFTED LEFT and Strike cards moved DOWN
+      const cards = [
+        {
+          id: 0,
+          type: "strike",
+          label: "Strike",
+          damage: 75,
+          x: 100,
+          y: 400,
+          priceRange: [0, 10],
+        },
+        {
+          id: 1,
+          type: "defend",
+          label: "Defend",
+          health: 400,
+          block: 400,
+          x: 500,
+          y: 200,
+          priceRange: [0, 100],
+        },
+        {
+          id: 2,
+          type: "strike",
+          label: "Strike",
+          damage: 150,
+          x: 300,
+          y: 400,
+          priceRange: [10, 30],
+        },
+        {
+          id: 3,
+          type: "strike",
+          label: "Strike",
+          damage: 75,
+          x: 550,
+          y: 400,
+          priceRange: [30, 60],
+        },
+        {
+          id: 4,
+          type: "strike",
+          label: "Strike",
+          damage: 41,
+          x: 750,
+          y: 400,
+          priceRange: [60, 100],
+        },
+      ];
 
-// Card layout - SHIFTED LEFT and Strike cards moved DOWN
-const cards = [
-    { id: 0, type: 'strike', label: 'Strike', damage: 75, x: 100, y: 400, priceRange: [0, 10] },
-    { id: 1, type: 'defend', label: 'Defend', health: 400, block: 400, x: 500, y: 200, priceRange: [0, 100] },
-    { id: 2, type: 'strike', label: 'Strike', damage: 150, x: 300, y: 400, priceRange: [10, 30] },
-    { id: 3, type: 'strike', label: 'Strike', damage: 75, x: 550, y: 400, priceRange: [30, 60] },
-    { id: 4, type: 'strike', label: 'Strike', damage: 41, x: 750, y: 400, priceRange: [60, 100] }
-];
+      // Load and process data
+      d3.csv("../data/games.csv")
+        .then((loadedData) => {
+          console.log("✅ Data loaded:", loadedData.length, "rows");
+          data = loadedData;
 
-// Load and process data
-d3.csv('../data/games.csv').then(loadedData => {
-    console.log('✅ Data loaded:', loadedData.length, 'rows');
-    data = loadedData;
-    
-    data.forEach(d => {
-        d.price = +d['price_initial (USD)'] || 0;
-        let genreStr = d.genres || '';
-        genreStr = genreStr.replace(/[\[\]']/g, '');
-        d.genreList = genreStr.split(',').map(g => g.trim());
-        d.isIndie = d.genreList.includes('Indie');
-    });
-    
-    console.log('Indie games:', data.filter(d => d.isIndie).length);
-    console.log('Studio games:', data.filter(d => !d.isIndie).length);
-    
-    calculateValues();
-    drawVisualization();
-}).catch(error => {
-    console.error('❌ Error loading CSV:', error);
-    document.getElementById('info').innerHTML = `
+          data.forEach((d) => {
+            d.price = +d["price_initial (USD)"] || 0;
+            let genreStr = d.genres || "";
+            genreStr = genreStr.replace(/[\[\]']/g, "");
+            d.genreList = genreStr.split(",").map((g) => g.trim());
+            d.isIndie = d.genreList.includes("Indie");
+          });
+
+          console.log("Indie games:", data.filter((d) => d.isIndie).length);
+          console.log("Studio games:", data.filter((d) => !d.isIndie).length);
+
+          calculateValues();
+          drawVisualization();
+        })
+        .catch((error) => {
+          console.error("❌ Error loading CSV:", error);
+          document.getElementById("info").innerHTML = `
         <div style="color: #ff6b9d;">⚠️ DATA LOADING ERROR</div>
         <div style="font-size: 0.5rem; margin-top: 5px;">Path: ../data/games.csv</div>
         <div style="font-size: 0.5rem;">${error.message}</div>
     `;
-    drawVisualization();
-});
+          drawVisualization();
+        });
 
-function calculateValues() {
-    if (!data || data.length === 0) return;
-    
-    cards.forEach(card => {
-        if (card.type === 'strike') {
-            const studioGames = data.filter(d => 
-                !d.isIndie && 
-                d.price >= card.priceRange[0] && 
+      function calculateValues() {
+        if (!data || data.length === 0) return;
+
+        cards.forEach((card) => {
+          if (card.type === "strike") {
+            const studioGames = data.filter(
+              (d) =>
+                !d.isIndie &&
+                d.price >= card.priceRange[0] &&
                 d.price < card.priceRange[1]
             );
             card.gameCount = studioGames.length;
             card.damage = studioGames.length;
-        } else if (card.type === 'defend') {
-            const indieGames = data.filter(d => d.isIndie);
+          } else if (card.type === "defend") {
+            const indieGames = data.filter((d) => d.isIndie);
             card.gameCount = indieGames.length;
             card.block = indieGames.length;
             defendHealth = indieGames.length;
-        }
-    });
-}
+          }
+        });
+      }
 
-function drawVisualization() {
-    svg.selectAll('*').remove();
-    
-    // Title: Peak label
-    svg.append('text')
-        .attr('class', 'peak-label')
-        .attr('x', 500)
-        .attr('y', 30)
-        .attr('text-anchor', 'middle')
-        .text('⛰️ PEAK (most games)');
-    
-    // Find which price range has most games
-    const maxCard = cards.filter(c => c.type === 'strike').reduce((max, card) => 
-        (card.gameCount || 0) > (max.gameCount || 0) ? card : max
-    );
-    
-    // Arrow pointing to peak
-    if (maxCard && maxCard.gameCount > 0) {
-        const arrowX = maxCard.x;
-        svg.append('line')
-            .attr('x1', 500)
-            .attr('y1', 40)
-            .attr('x2', arrowX)
-            .attr('y2', 280)
-            .attr('stroke', '#ffd700')
-            .attr('stroke-width', 2)
-            .attr('stroke-dasharray', '5,5');
-    }
-    
-    // X-axis label (LEFT SIDE)
-    svg.append('text')
-        .attr('class', 'axis-label')
-        .attr('x', 50)
-        .attr('y', 570)
-        .text('X-AXIS: Game Price →');
-    
-    // Legend (RIGHT SIDE)
-    svg.append('text')
-        .attr('class', 'legend-text')
-        .attr('x', 650)
-        .attr('y', 560)
-        .text('# = Number of Games');
-    
-    svg.append('rect')
-        .attr('x', 650)
-        .attr('y', 570)
-        .attr('width', 20)
-        .attr('height', 15)
-        .attr('fill', '#ff6b9d')
-        .attr('stroke', '#ff3d7f')
-        .attr('stroke-width', 2);
-    
-    svg.append('text')
-        .attr('class', 'legend-text')
-        .attr('x', 675)
-        .attr('y', 582)
-        .text('Strike: Studio Games');
-    
-    svg.append('rect')
-        .attr('x', 820)
-        .attr('y', 570)
-        .attr('width', 20)
-        .attr('height', 15)
-        .attr('fill', '#00ff88')
-        .attr('stroke', '#00cc6a')
-        .attr('stroke-width', 2);
-    
-    svg.append('text')
-        .attr('class', 'legend-text')
-        .attr('x', 845)
-        .attr('y', 582)
-        .text('Defend: Indie Games');
-    
-    // Draw cards
-    const cardGroups = svg.selectAll('.card-group')
-        .data(cards)
-        .enter()
-        .append('g')
-        .attr('class', 'card-group')
-        .attr('transform', d => `translate(${d.x}, ${d.y})`);
-    
-    // Card rectangles
-    cardGroups.append('rect')
-        .attr('class', d => `card ${d.type}`)
-        .attr('x', -60)
-        .attr('y', -75)
-        .attr('width', 120)
-        .attr('height', 150)
-        .attr('rx', 10)
-        .on('click', function(event, d) {
-            if (d.type === 'strike') {
-                attackDefend(d);
+      function drawVisualization() {
+        svg.selectAll("*").remove();
+
+        // Title: Peak label
+        svg
+          .append("text")
+          .attr("class", "peak-label")
+          .attr("x", 500)
+          .attr("y", 30)
+          .attr("text-anchor", "middle")
+          .text("⛰️ PEAK (most games)");
+
+        // Find which price range has most games
+        const maxCard = cards
+          .filter((c) => c.type === "strike")
+          .reduce((max, card) =>
+            (card.gameCount || 0) > (max.gameCount || 0) ? card : max
+          );
+
+        // Arrow pointing to peak
+        if (maxCard && maxCard.gameCount > 0) {
+          const arrowX = maxCard.x;
+          svg
+            .append("line")
+            .attr("x1", 500)
+            .attr("y1", 40)
+            .attr("x2", arrowX)
+            .attr("y2", 280)
+            .attr("stroke", "#ffd700")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5");
+        }
+
+        // X-axis label (LEFT SIDE)
+        svg
+          .append("text")
+          .attr("class", "axis-label")
+          .attr("x", 50)
+          .attr("y", 570)
+          .text("X-AXIS: Game Price →");
+
+        // Legend (RIGHT SIDE)
+        svg
+          .append("text")
+          .attr("class", "legend-text")
+          .attr("x", 650)
+          .attr("y", 560)
+          .text("# = Number of Games");
+
+        svg
+          .append("rect")
+          .attr("x", 650)
+          .attr("y", 570)
+          .attr("width", 20)
+          .attr("height", 15)
+          .attr("fill", "#ff6b9d")
+          .attr("stroke", "#ff3d7f")
+          .attr("stroke-width", 2);
+
+        svg
+          .append("text")
+          .attr("class", "legend-text")
+          .attr("x", 675)
+          .attr("y", 582)
+          .text("Strike: Studio Games");
+
+        svg
+          .append("rect")
+          .attr("x", 820)
+          .attr("y", 570)
+          .attr("width", 20)
+          .attr("height", 15)
+          .attr("fill", "#00ff88")
+          .attr("stroke", "#00cc6a")
+          .attr("stroke-width", 2);
+
+        svg
+          .append("text")
+          .attr("class", "legend-text")
+          .attr("x", 845)
+          .attr("y", 582)
+          .text("Defend: Indie Games");
+
+        // Draw cards
+        const cardGroups = svg
+          .selectAll(".card-group")
+          .data(cards)
+          .enter()
+          .append("g")
+          .attr("class", "card-group")
+          .attr("transform", (d) => `translate(${d.x}, ${d.y})`);
+
+        // Card rectangles
+        cardGroups
+          .append("rect")
+          .attr("class", (d) => `card ${d.type}`)
+          .attr("x", -60)
+          .attr("y", -75)
+          .attr("width", 120)
+          .attr("height", 150)
+          .attr("rx", 10)
+          .on("click", function (event, d) {
+            if (d.type === "strike") {
+              attackDefend(d);
             }
-        })
-        .on('mouseover', function(event, d) {
-            if (d.type === 'strike') {
-                d3.select('#info').html(`
+          })
+          .on("mouseover", function (event, d) {
+            if (d.type === "strike") {
+              d3.select("#info").html(`
                     <div style="color: #ff6b9d;">⚔️ STRIKE CARD</div>
-                    <div>Price Range: ${d.priceRange[0]}-$${d.priceRange[1]}</div>
+                    <div>Price Range: ${d.priceRange[0]}-$${
+                d.priceRange[1]
+              }</div>
                     <div>Studio Games: ${d.gameCount || 0}</div>
                     <div>Attack Damage: ${d.damage || 0}</div>
                     <div style="margin-top: 5px; font-size: 0.5rem;">Click to attack!</div>
                 `);
             } else {
-                d3.select('#info').html(`
+              d3.select("#info").html(`
                     <div style="color: #00ff88;">🛡️ DEFEND CARD</div>
                     <div>Total Indie Games: ${d.gameCount || 0}</div>
                     <div>Block Strength: ${Math.max(0, defendHealth)}</div>
                 `);
             }
-        });
-    
-    // Card content
-    cardGroups.each(function(d) {
-        const group = d3.select(this);
-        
-        if (d.type === 'strike') {
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', -40)
-                .text('Strike');
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', -10)
-                .text('Deal');
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', 20)
-                .attr('id', `damage-${d.id}`)
-                .style('font-size', '22px')
-                .style('fill', '#fff')
-                .text(d.damage || 0);
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', 50)
-                .text('damage');
-        } else {
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', -40)
-                .text('Defend');
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', -10)
-                .text('Gain');
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', 20)
-                .attr('id', 'defend-value')
-                .style('font-size', '22px')
-                .style('fill', '#fff')
-                .text(d.block || 0);
-            
-            group.append('text')
-                .attr('class', 'card-text')
-                .attr('y', 50)
-                .text('block');
-        }
-    });
-    
-    // Game counts below cards
-    cardGroups.append('text')
-        .attr('class', 'game-count')
-        .attr('y', 110)
-        .attr('id', d => `count-${d.id}`)
-        .text(d => d.gameCount !== undefined ? d.gameCount : 0);
-    
-    // Price range labels (ONLY for Strike cards)
-    cardGroups.filter(d => d.type === 'strike')
-        .append('text')
-        .attr('class', 'price-label')
-        .attr('y', 140)
-        .text(d => `$${d.priceRange[0]}-${d.priceRange[1]}`);
-}
+          });
 
-function attackDefend(strikeCard) {
-    const damage = strikeCard.damage || 0;
-    defendHealth -= damage;
-    
-    d3.select('#defend-value')
-        .transition()
-        .duration(300)
-        .style('fill', '#ff3d7f')
-        .transition()
-        .duration(300)
-        .style('fill', '#fff')
-        .text(Math.max(0, defendHealth));
-    
-    // Damage animation
-    const defenderCard = cards.find(c => c.type === 'defend');
-    svg.append('text')
-        .attr('x', defenderCard.x)
-        .attr('y', defenderCard.y - 100)
-        .style('font-size', '28px')
-        .style('fill', '#ff3d7f')
-        .style('font-family', 'Press Start 2P')
-        .style('text-anchor', 'middle')
-        .text(`-${damage}`)
-        .transition()
-        .duration(1000)
-        .attr('y', defenderCard.y - 150)
-        .style('opacity', 0)
-        .remove();
-    
-    d3.select('#info').html(`
+        // Card content
+        cardGroups.each(function (d) {
+          const group = d3.select(this);
+
+          if (d.type === "strike") {
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", -40)
+              .text("Strike");
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", -10)
+              .text("Deal");
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", 20)
+              .attr("id", `damage-${d.id}`)
+              .style("font-size", "22px")
+              .style("fill", "#fff")
+              .text(d.damage || 0);
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", 50)
+              .text("damage");
+          } else {
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", -40)
+              .text("Defend");
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", -10)
+              .text("Gain");
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", 20)
+              .attr("id", "defend-value")
+              .style("font-size", "22px")
+              .style("fill", "#fff")
+              .text(d.block || 0);
+
+            group
+              .append("text")
+              .attr("class", "card-text")
+              .attr("y", 50)
+              .text("block");
+          }
+        });
+
+        // Game counts below cards
+        cardGroups
+          .append("text")
+          .attr("class", "game-count")
+          .attr("y", 110)
+          .attr("id", (d) => `count-${d.id}`)
+          .text((d) => (d.gameCount !== undefined ? d.gameCount : 0));
+
+        // Price range labels (ONLY for Strike cards)
+        cardGroups
+          .filter((d) => d.type === "strike")
+          .append("text")
+          .attr("class", "price-label")
+          .attr("y", 140)
+          .text((d) => `$${d.priceRange[0]}-${d.priceRange[1]}`);
+      }
+
+      function attackDefend(strikeCard) {
+        const damage = strikeCard.damage || 0;
+        defendHealth -= damage;
+
+        d3.select("#defend-value")
+          .transition()
+          .duration(300)
+          .style("fill", "#ff3d7f")
+          .transition()
+          .duration(300)
+          .style("fill", "#fff")
+          .text(Math.max(0, defendHealth));
+
+        // Damage animation
+        const defenderCard = cards.find((c) => c.type === "defend");
+        svg
+          .append("text")
+          .attr("x", defenderCard.x)
+          .attr("y", defenderCard.y - 100)
+          .style("font-size", "28px")
+          .style("fill", "#ff3d7f")
+          .style("font-family", "Press Start 2P")
+          .style("text-anchor", "middle")
+          .text(`-${damage}`)
+          .transition()
+          .duration(1000)
+          .attr("y", defenderCard.y - 150)
+          .style("opacity", 0)
+          .remove();
+
+        d3.select("#info").html(`
         <div style="color: #ff6b9d;">⚔️ ATTACK!</div>
-        <div>Strike ($${strikeCard.priceRange[0]}-$${strikeCard.priceRange[1]}) → ${damage} damage!</div>
-        <div style="color: #00ff88;">Defend: ${Math.max(0, defendHealth)} remaining</div>
-        ${defendHealth <= 0 ? '<div style="color: #ffd700; margin-top: 10px;">🏆 STUDIO WINS!</div>' : ''}
+        <div>Strike ($${strikeCard.priceRange[0]}-$${
+          strikeCard.priceRange[1]
+        }) → ${damage} damage!</div>
+        <div style="color: #00ff88;">Defend: ${Math.max(
+          0,
+          defendHealth
+        )} remaining</div>
+        ${
+          defendHealth <= 0
+            ? '<div style="color: #ffd700; margin-top: 10px;">🏆 STUDIO WINS!</div>'
+            : ""
+        }
     `);
-    
-    if (defendHealth <= 0) {
-        svg.selectAll('.card.defend')
+
+        if (defendHealth <= 0) {
+          svg
+            .selectAll(".card.defend")
             .transition()
             .duration(500)
-            .style('opacity', 0.3);
-    }
-}
-</script>
-
-</body>
+            .style("opacity", 0.3);
+        }
+      }
+    </script>
+  </body>
 </html>

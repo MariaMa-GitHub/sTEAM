@@ -677,5 +677,4 @@ function hideTooltip() {
   d3.selectAll(".tooltip").remove();
 }
 
-// Initialize the application
 document.addEventListener("DOMContentLoaded", loadData);

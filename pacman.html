@@ -944,15 +944,13 @@
         function burst(x, y, cat) {
           const color = fillFor(cat);
           const N = 9;
-          const data = d3
-            .range(N)
-            .map(() => ({
-              x,
-              y,
-              a: Math.random() * Math.PI * 2,
-              v: 1 + Math.random() * 2,
-              s: 2 + Math.random() * 2,
-            }));
+          const data = d3.range(N).map(() => ({
+            x,
+            y,
+            a: Math.random() * Math.PI * 2,
+            v: 1 + Math.random() * 2,
+            s: 2 + Math.random() * 2,
+          }));
           const bursts = d3
             .select("#game")
             .select("#bursts")

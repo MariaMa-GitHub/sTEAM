@@ -1,6 +1,4 @@
 
-// SVG drawing area
-
 let margin = {top: 40, right: 10, bottom: 60, left: 60};
 
 let width = 960 - margin.left - margin.right,
@@ -76,29 +74,20 @@ nonIndieLegend.append("circle")
     .attr("fill", "blue")
     .attr("cx", 75);
 
-// Create a 'data' property under the window object
-// to store the data
 Object.defineProperty(window, 'data', {
-	// data getter
 	get: function() { return _data; },
-	// data setter
 	set: function(value) {
 		_data = value;
-        // update the visualization each time the data property is set by using the equal sign (e.g. data = [])
-		updateVisualization()
+		updateVisualization();
 	}
 });
 
-// Load CSV file
 function loadData() {
 	d3.csv("data/games.csv").then(csv=> {
-
-		// Store csv data in global variable
 		data = csv;
 	});
 }
 
-// Initialize data
 loadData();
 
 function changeSelection(cooperativeData, competitiveData) {
@@ -115,11 +104,8 @@ function changeSelection(cooperativeData, competitiveData) {
     leftPlayer = leftTeam.selectAll("circle")
         .data(cooperativeData);
 
-    // Enter
     leftPlayer.enter().append("circle")
         .attr("class", "left-player")
-
-    // Enter and Update
         .merge(leftPlayer)
         .attr("cx", (d, index) => (index % 30) * width / 60 - 15)
         .attr("cy", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -131,17 +117,13 @@ function changeSelection(cooperativeData, competitiveData) {
                 return "blue"
         });
 
-    // Exit
     leftPlayer.exit().remove();
 
     let rightPlayer = rightTeam.selectAll("circle")
         .data(competitiveData);
 
-    // Enter
     rightPlayer.enter().append("circle")
         .attr("class", "right-player")
-
-    // Enter and Update
         .merge(rightPlayer)
         .attr("cx", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
         .attr("cy", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -153,7 +135,6 @@ function changeSelection(cooperativeData, competitiveData) {
                 return "blue"
         });
 
-    // Exit
     rightPlayer.exit().remove();
 
     svg.append("text")
@@ -183,7 +164,6 @@ function changeSelection(cooperativeData, competitiveData) {
     });
 }
 
-// Render visualization
 function updateVisualization() {
     let multiplayerData = data.filter(d => d.categories.includes('Multi-player'));
     let nonmultiplayerData = data.filter(d => (d.categories.includes('Multi-player')) == false);
@@ -193,11 +173,8 @@ function updateVisualization() {
     let leftPlayer = leftTeam.selectAll("circle")
 		.data(multiplayerData);
 
-	// Enter
 	leftPlayer.enter().append("circle")
 		.attr("class", "left-player")
-
-	// Enter and Update
 		.merge(leftPlayer)
 		.attr("cx", (d, index) => (index % 30) * width / 60 - 15)
 		.attr("cy", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -209,17 +186,13 @@ function updateVisualization() {
                 return "blue"
         });
 
-	// Exit
 	leftPlayer.exit().remove();
 
     let rightPlayer = rightTeam.selectAll("circle")
 		.data(nonmultiplayerData);
 
-	// Enter
 	rightPlayer.enter().append("circle")
 		.attr("class", "right-player")
-
-	// Enter and Update
 		.merge(rightPlayer)
 		.attr("cx", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
 		.attr("cy", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
@@ -231,7 +204,6 @@ function updateVisualization() {
                 return "blue"
         });
 
-	// Exit
 	rightPlayer.exit().remove();
 
     leftTeam.append("rect")
