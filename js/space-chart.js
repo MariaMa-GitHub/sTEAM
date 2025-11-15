@@ -297,6 +297,92 @@ class SpaceChart {
       .attr("font-family", "sans-serif")
       .attr("font-size", "20px");
 
+    // legend
+    const legendGroup = vis.svg.append("g")
+      .attr("transform", `translate(${spaceWidth - 180}, 20)`);
+
+    legendGroup.append("rect")
+      .attr("x", -10)
+      .attr("y", -10)
+      .attr("width", 170)
+      .attr("height", 110)
+      .attr("rx", 5)
+      .attr("fill", "rgba(0,0,0,0.6)")
+      .attr("stroke", "#66c0f4")
+      .attr("stroke-width", 1);
+
+    legendGroup.append("text")
+      .attr("x", 75)
+      .attr("y", 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "12px")
+      .attr("font-weight", "bold")
+      .text("Legend");
+
+    // Studio color
+    legendGroup.append("circle")
+      .attr("cx", 15)
+      .attr("cy", 25)
+      .attr("r", 6)
+      .attr("fill", "hsl(320, 94%, 57%)");
+
+    legendGroup.append("text")
+      .attr("x", 30)
+      .attr("y", 28)
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "11px")
+      .text("Studio");
+
+    // Indie color
+    legendGroup.append("circle")
+      .attr("cx", 15)
+      .attr("cy", 45)
+      .attr("r", 6)
+      .attr("fill", "hsl(163, 97%, 41%)");
+
+    legendGroup.append("text")
+      .attr("x", 30)
+      .attr("y", 48)
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "11px")
+      .text("Indie");
+
+    // Size = player count
+    legendGroup.append("circle")
+      .attr("cx", 15)
+      .attr("cy", 65)
+      .attr("r", 3)
+      .attr("fill", "#fff")
+      .attr("opacity", 0.7);
+
+    legendGroup.append("text")
+      .attr("x", 30)
+      .attr("y", 68)
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "10px")
+      .text("Size = Players");
+
+    // Opacity = reviews
+    legendGroup.append("circle")
+      .attr("cx", 15)
+      .attr("cy", 85)
+      .attr("r", 6)
+      .attr("fill", "#fff")
+      .attr("opacity", 0.3);
+
+    legendGroup.append("text")
+      .attr("x", 30)
+      .attr("y", 88)
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "10px")
+      .text("Opacity = Reviews");
+
     // draw teh spaceship
     vis.spaceshipGraphic = vis.svg
       .append("polygon")

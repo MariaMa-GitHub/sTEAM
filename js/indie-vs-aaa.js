@@ -357,7 +357,9 @@ function createRadarChart(containerId, data, type) {
     .attr("class", `radar-area ${type}-area`)
     .attr("d", areaGenerator)
     .style("fill", type === "indie" ? "#ff6b9d" : "#4ecdc4")
-    .style("stroke", type === "indie" ? "#ff6b9d" : "#4ecdc4");
+    .style("fill-opacity", 0.3)
+    .style("stroke", type === "indie" ? "#ff6b9d" : "#4ecdc4")
+    .style("stroke-width", 2);
 
   chartGroup
     .selectAll(".radar-point")
@@ -375,12 +377,23 @@ function createRadarChart(containerId, data, type) {
       (d, i) =>
         Math.sin(angleScale(i) - Math.PI / 2) * radiusScale(d.value)
     )
+    .attr("r", 6)
     .style("fill", type === "indie" ? "#ff6b9d" : "#4ecdc4")
     .style("stroke", "#ffffff")
+    .style("stroke-width", 3)
+    .style("cursor", "pointer")
     .on("mouseover", function (event, d) {
+      d3.select(this)
+        .attr("r", 8)
+        .style("filter", "drop-shadow(0 0 8px rgba(102, 192, 244, 0.8))");
       showTooltip(event, d, type);
     })
-    .on("mouseout", hideTooltip);
+    .on("mouseout", function() {
+      d3.select(this)
+        .attr("r", 6)
+        .style("filter", null);
+      hideTooltip();
+    });
 
   chartGroup
     .selectAll(".radar-label")
@@ -487,7 +500,8 @@ function updateRadarChartData(containerId, data, type) {
   chartGroup
     .select(`.radar-area.${type}-area`)
     .datum(normalizedData)
-    .attr("d", areaGenerator);
+    .attr("d", areaGenerator)
+    .style("fill-opacity", 0.3);
 
   chartGroup
     .selectAll(`.radar-point.${type}-point`)
@@ -501,7 +515,8 @@ function updateRadarChartData(containerId, data, type) {
       "cy",
       (d, i) =>
         Math.sin(angleScale(i) - Math.PI / 2) * radiusScale(d.value)
-    );
+    )
+    .attr("r", 6);
 
   setTimeout(() => {
     chartGroup

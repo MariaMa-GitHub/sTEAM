@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>sTeam visualization</title>
+    <title>STEAM ARCADE</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
       rel="stylesheet"
@@ -17,58 +17,307 @@
 
       body {
         font-family: ui-monospace, "Courier New", monospace;
-        background: #000;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
         color: #c7d5e0;
+        overflow-x: hidden;
+        min-height: 100vh;
       }
 
-      .main-header {
-        background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
-        padding: 2rem;
+      /* Arcade Cabinet Container */
+      .arcade-machine {
+        max-width: 1600px;
+        margin: 2rem auto;
+        background: #2a2a3e;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 0 100px rgba(102, 192, 244, 0.3),
+          inset 0 0 50px rgba(0, 0, 0, 0.5);
+        border: 8px solid #1a1a2e;
+        position: relative;
+      }
+
+      .arcade-screen {
+        background: #000;
+        border-radius: 12px;
+        padding: 30px;
+        border: 4px solid #66c0f4;
+        box-shadow: inset 0 0 50px rgba(102, 192, 244, 0.2),
+          0 0 30px rgba(102, 192, 244, 0.3);
+        position: relative;
+        min-height: 800px;
+        overflow: hidden;
+      }
+
+      .screen-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at center,
+          rgba(102, 192, 244, 0.05) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* Chapter Header Bar */
+      .chapter-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background: rgba(26, 26, 46, 0.6);
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border: 2px solid rgba(102, 192, 244, 0.2);
+      }
+
+      .level-indicator {
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.9rem;
+        color: #66c0f4;
+        white-space: nowrap;
+      }
+
+      .chapter-header-content {
+        flex: 1;
         text-align: center;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        padding: 0 2rem;
       }
 
-      .main-header h1 {
+      #chapter-title {
         color: #66c0f4;
         font-family: "Press Start 2P", monospace;
-        font-size: 1.8rem;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 0 20px rgba(102, 192, 244, 0.5);
-      }
-
-      .main-header p {
-        color: #8f98a0;
         font-size: 1rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 20px rgba(102, 192, 244, 0.8);
+        line-height: 1.5;
       }
 
-      .viz-container {
-        max-width: 1400px;
+      #chapter-description {
+        color: #acb2b8;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      #chapter-description .controls-text {
+        color: #8f98a0;
+        font-weight: 600;
+        font-size: 0.9em;
+        display: block;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(102, 192, 244, 0.1);
+      }
+
+      .chapter-header-nav {
+        display: flex;
+        gap: 1rem;
+        white-space: nowrap;
+      }
+
+      /* Chapter Selector */
+      .chapter-selector {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .chapter-btn {
+        background: rgba(102, 192, 244, 0.1);
+        border: 2px solid #66c0f4;
+        color: #66c0f4;
+        padding: 0.8rem 1.5rem;
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .chapter-btn:hover {
+        background: rgba(102, 192, 244, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 192, 244, 0.5);
+      }
+
+      .chapter-btn.active {
+        background: #66c0f4;
+        color: #000;
+        box-shadow: 0 0 30px rgba(102, 192, 244, 0.8);
+        animation: glow 1.5s ease-in-out infinite;
+      }
+
+      @keyframes glow {
+        0%,
+        100% {
+          box-shadow: 0 0 30px rgba(102, 192, 244, 0.8);
+        }
+        50% {
+          box-shadow: 0 0 50px rgba(102, 192, 244, 1);
+        }
+      }
+
+      /* Chapter Content */
+      .chapter-container {
+        display: none;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      .chapter-container.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .chapter-header {
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+
+      .chapter-header h2 {
+        color: #66c0f4;
+        font-family: "Press Start 2P", monospace;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 20px rgba(102, 192, 244, 0.8);
+        animation: titleGlow 2s ease-in-out infinite;
+      }
+
+      @keyframes titleGlow {
+        0%,
+        100% {
+          text-shadow: 0 0 20px rgba(102, 192, 244, 0.8);
+        }
+        50% {
+          text-shadow: 0 0 40px rgba(102, 192, 244, 1);
+        }
+      }
+
+      .chapter-header p {
+        color: #acb2b8;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
       }
 
-      .viz-section {
+      .chapter-header .controls-text {
+        color: #7a8ca8;
+        font-weight: 600;
+        font-size: 0.95em;
+        margin-top: 0.5rem;
+        display: block;
+      }
+
+      .action-button {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 3px solid #ff6b9d;
+        background: radial-gradient(circle, #ff6b9d 0%, #cc5570 100%);
+        color: #000;
+        font-family: "Press Start 2P", monospace;
+        font-size: 0.55rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .action-button::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60%;
+        height: 60%;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .action-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 25px rgba(255, 107, 157, 0.8);
+      }
+
+      .action-button:active {
+        transform: scale(0.95);
+      }
+
+      .action-button span {
+        position: relative;
+        z-index: 1;
+      }
+
+      .action-button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: scale(1);
+      }
+
+      /* Visualization Styles */
+      .viz-content {
+        margin-top: 2rem;
+      }
+
+      /* Consistent Panel Style for All Visualizations */
+      .viz-panel {
         background: rgba(14, 18, 32, 0.8);
         border-radius: 12px;
         padding: 2rem;
-        margin-bottom: 3rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(102, 192, 244, 0.1);
+        border: 2px solid rgba(102, 192, 244, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+          0 0 20px rgba(102, 192, 244, 0.1);
+        min-height: 700px;
+        position: relative;
+        overflow: hidden;
       }
 
-      .viz-section h2 {
-        color: #66c0f4;
-        font-family: "Press Start 2P", monospace;
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #66c0f4;
-      }
-
-      .viz-description {
-        color: #acb2b8;
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
+      .viz-panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(102, 192, 244, 0.5),
+          transparent
+        );
       }
 
       .viz-iframe {
@@ -77,39 +326,29 @@
         border: none;
         border-radius: 8px;
         background: #000;
+        display: block;
       }
 
-      .viz-placeholder {
-        background: linear-gradient(135deg, #1b2838 0%, #2a475e 100%);
-        border: 2px dashed #66c0f4;
+      .viz-panel iframe {
+        width: 100%;
+        height: 900px;
+        border: none;
         border-radius: 8px;
-        padding: 3rem;
-        text-align: center;
-        color: #8f98a0;
-        min-height: 400px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        background: #000;
+        display: block;
       }
 
-      .viz-placeholder h3 {
-        color: #66c0f4;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
+      .viz-panel-content {
+        width: 100%;
+        height: 100%;
       }
 
-      .footer {
-        text-align: center;
-        padding: 2rem;
-        color: #8f98a0;
-        font-size: 0.9rem;
-      }
-
-      /* Indie vs AAA Visualization Styles */
+      /* Indie vs AAA Styles - Now using consistent panel */
       .indie-vs-aaa-container {
-        padding: 2rem 0;
+        padding: 0;
         color: #c7d5e0;
+        width: 100%;
+        height: 100%;
       }
 
       .indie-vs-aaa-header {
@@ -201,11 +440,6 @@
         border-color: #4ecdc4;
       }
 
-      .stat-bar.dominant {
-        border-color: #66c0f4;
-        box-shadow: 0 0 20px rgba(102, 192, 244, 0.6);
-      }
-
       .stat-number {
         font-size: 1.2rem;
         font-weight: bold;
@@ -233,14 +467,10 @@
       .radar-charts svg {
         display: block;
         margin: 0 auto;
-        background: rgba(27, 40, 56, 0.5);
+        background: rgba(27, 40, 56, 0.3);
         border-radius: 8px;
         border: 1px solid rgba(102, 192, 244, 0.2);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
-
-      .radar-charts svg g {
-        transform-origin: center;
       }
 
       .radar-axis {
@@ -253,23 +483,9 @@
         stroke-width: 1;
       }
 
-      .radar-area {
-        fill-opacity: 0.3;
-        stroke-width: 2;
-      }
-
-      .radar-area.smooth-transition {
-        transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
       .radar-point {
         transition: all 0.3s ease;
         cursor: pointer;
-      }
-
-      .radar-point.smooth-transition {
-        transition: cx 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-          cy 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .radar-point:hover {
@@ -331,7 +547,6 @@
         background: rgba(102, 192, 244, 0.2);
         border-color: #66c0f4;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 192, 244, 0.4);
       }
 
       .year-button.active {
@@ -341,24 +556,39 @@
         box-shadow: 0 0 20px rgba(102, 192, 244, 0.6);
       }
 
-      /* Tooltip styles */
-      .tooltip {
-        position: absolute;
-        background: rgba(14, 18, 32, 0.95);
-        color: #c7d5e0;
-        padding: 12px;
-        border-radius: 8px;
-        border: 2px solid #66c0f4;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        font-size: 12px;
-        font-family: ui-monospace, "Courier New", monospace;
-        z-index: 1000;
-        pointer-events: none;
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 2rem;
+        color: #8f98a0;
+        font-size: 0.9rem;
+        margin-top: 2rem;
       }
 
+      /* Responsive */
       @media (max-width: 768px) {
-        .indie-vs-aaa-title {
-          font-size: 1rem;
+        .chapter-header-bar {
+          flex-direction: column;
+          gap: 1rem;
+          padding: 1rem;
+        }
+
+        .chapter-header-content {
+          padding: 0;
+        }
+
+        .chapter-header-nav {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .chapter-selector {
+          gap: 0.5rem;
+        }
+
+        .chapter-btn {
+          font-size: 0.5rem;
+          padding: 0.5rem 1rem;
         }
 
         .radar-charts {
@@ -368,142 +598,271 @@
         .chart-container {
           min-width: 100%;
         }
-
-        .stats-bars {
-          flex-direction: column;
-        }
       }
     </style>
   </head>
   <body>
-    <div class="main-header">
-      <h1>🎮 STEAM GAMES ANALYSIS</h1>
-      <p>Interactive Data Visualization Prototype V1</p>
-    </div>
+    <div class="arcade-machine">
+      <div class="arcade-screen">
+        <div class="screen-glow"></div>
 
-    <div class="viz-container">
-      <div class="viz-section">
-        <h2>Visualization 1: Pac-Man Interactive Scatter Plot</h2>
-        <p class="viz-description">
-          Play as Pac-Man and explore Steam games! Each dot is a game - X is
-          price, Y is positive review percentage. Pink dots are Action games,
-          green ones are Indie. Stats show up on the right when you collect
-          games.
-          <br />Arrow keys or WASD to move.
-        </p>
+        <!-- Chapter Selector -->
+        <div class="chapter-selector">
+          <button class="chapter-btn active" data-chapter="1">Level 1</button>
+          <button class="chapter-btn" data-chapter="2">Level 2</button>
+          <button class="chapter-btn" data-chapter="3">Level 3</button>
+          <button class="chapter-btn" data-chapter="4">Level 4</button>
+          <button class="chapter-btn" data-chapter="5">Level 5</button>
+        </div>
 
-        <iframe
-          src="pacman.html"
-          class="viz-iframe"
-          title="Pac-Man Steam Game Visualization"
-        ></iframe>
-      </div>
-
-      <div class="viz-section">
-        <h2>Visualization 2: Peak Battle - Indie vs Studio</h2>
-        <p class="viz-description">
-          Strike cards represent studio games in different price ranges, while
-          the Defend card represents all indie games. The number below each card
-          shows how many games fall into that category. Click any Strike card to
-          attack the Defend block!
-          <br />Click Strike cards to attack.
-        </p>
-
-        <iframe
-          src="battle.html"
-          class="viz-iframe"
-          title="Peak Battle Visualization"
-        ></iframe>
-      </div>
-
-      <div class="viz-section">
-        <h2>Visualization 3: Indie vs AAA</h2>
-        <p class="viz-description">
-          Compare indie and AAA games on different metrics. Hover over the icons
-          around the radar charts to see stats. Use the year buttons at the
-          bottom to filter by release year.
-        </p>
-
-        <div class="indie-vs-aaa-container">
-          <div class="indie-vs-aaa-header">
-            <h3 class="indie-vs-aaa-title">
-              <span class="indie-text">INDIE</span>
-              <span class="vs-text">VS</span>
-              <span class="aaa-text">AAA</span>
-            </h3>
+        <!-- Chapter Header Bar -->
+        <div class="chapter-header-bar">
+          <div class="level-indicator">
+            LEVEL <span id="current-level">1</span> / 5
           </div>
-
-          <div class="stats-bars">
-            <div class="stat-bar indie-bar">
-              <div class="stat-bar-fill"></div>
-              <div class="stat-number" id="indie-stat">---</div>
-            </div>
-            <div class="stat-bar aaa-bar">
-              <div class="stat-bar-fill"></div>
-              <div class="stat-number" id="aaa-stat">---</div>
+          <div class="chapter-header-content">
+            <div id="chapter-title">CHAPTER 1: INDIE VS AAA</div>
+            <div id="chapter-description">
+              The main question: which is more popular? Compare indie and AAA
+              games across revenue, ratings, player counts, and reviews. Each
+              axis tells a different story.
+              <span class="controls-text"
+                >Controls: Hover over metric icons. Use year buttons to
+                filter.</span
+              >
             </div>
           </div>
+          <div class="chapter-header-nav">
+            <button class="action-button" id="prev-btn" disabled>
+              <span>PREV</span>
+            </button>
+            <button class="action-button" id="next-btn">
+              <span>NEXT</span>
+            </button>
+          </div>
+        </div>
 
-          <div class="radar-charts">
-            <div class="chart-container">
-              <svg id="indie-radar" width="400" height="400"></svg>
-            </div>
-            <div class="chart-container">
-              <svg id="aaa-radar" width="400" height="400"></svg>
+        <!-- Chapter 1: Indie vs AAA (The Main Question) -->
+        <div class="chapter-container active" id="chapter-1">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <div class="viz-panel-content">
+                <div class="indie-vs-aaa-container">
+                  <div class="indie-vs-aaa-header">
+                    <h3 class="indie-vs-aaa-title">
+                      <span class="indie-text">INDIE</span>
+                      <span class="vs-text">VS</span>
+                      <span class="aaa-text">AAA</span>
+                    </h3>
+                  </div>
+
+                  <div class="stats-bars">
+                    <div class="stat-bar indie-bar">
+                      <div class="stat-bar-fill"></div>
+                      <div class="stat-number" id="indie-stat">---</div>
+                    </div>
+                    <div class="stat-bar aaa-bar">
+                      <div class="stat-bar-fill"></div>
+                      <div class="stat-number" id="aaa-stat">---</div>
+                    </div>
+                  </div>
+
+                  <div class="radar-charts">
+                    <div class="chart-container">
+                      <svg id="indie-radar" width="400" height="400"></svg>
+                    </div>
+                    <div class="chart-container">
+                      <svg id="aaa-radar" width="400" height="400"></svg>
+                    </div>
+                  </div>
+
+                  <div class="year-selector">
+                    <h4>Select Year:</h4>
+                    <div class="year-buttons" id="year-buttons">
+                      <!-- Year buttons will be generated by JavaScript -->
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="year-selector">
-            <h4>Select Year:</h4>
-            <div class="year-buttons" id="year-buttons">
-              <!-- Year buttons will be generated by JavaScript -->
+        <!-- Chapter 2: The Game Landscape -->
+        <div class="chapter-container" id="chapter-2">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="pacman.html"
+                title="Pac-Man Steam Game Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 3: The Price War -->
+        <div class="chapter-container" id="chapter-3">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="battle.html"
+                title="Peak Battle Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 4: The Social Layer -->
+        <div class="chapter-container" id="chapter-4">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <div
+                class="viz-panel-content"
+                id="game-lobby"
+                style="height: 100%; width: 100%; min-height: 700px"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 5: The Genre Universe -->
+        <div class="chapter-container" id="chapter-5">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe src="space-chart.html" title="Space Chart"></iframe>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="viz-section">
-        <h2>Visualization 4: Game Lobby</h2>
-        <p class="viz-description">
-          Multiplayer vs non-multiplayer games. Hover over the left side to see
-          more details.
-        </p>
-        <div
-          class="viz-placeholder"
-          id="game-lobby"
-          style="height: 100%; width: 100%"
-        ></div>
-      </div>
-
-      <div class="viz-section">
-        <h2>Visualization 5: Space Chart</h2>
-        <p class="viz-description">
-          Navigate through a galaxy of games using arrow keys. Games are
-          clustered by genre, node size is player count, opacity is positive
-          reviews. Pink nodes are studio games, teal nodes are indie games. Fly
-          close to games to see details.
-          <br />Arrow keys to move (hover over visualization first).
-        </p>
-
-        <iframe
-          src="space-chart.html"
-          class="viz-iframe"
-          title="Space Chart"
-        ></iframe>
-      </div>
     </div>
 
     <div class="footer">
-      <p>Steam Games Data Visualization Project | Prototype V1 Submission</p>
+      <p>Steam Games Data Visualization Project | Prototype V2 Submission</p>
       <p style="margin-top: 0.5rem; font-size: 0.8rem">
         Team Members: Iris, Joshua, Xiran, Amanda, Maria
       </p>
     </div>
 
-    <!-- d3 -->
+    <!-- Scripts -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
-
     <script src="js/game-lobby.js"></script>
     <script src="js/indie-vs-aaa.js"></script>
+
+    <script>
+      // Chapter Navigation
+      let currentChapter = 1;
+      const totalChapters = 5;
+
+      const chapterData = {
+        1: {
+          title: "CHAPTER 1: INDIE VS AAA",
+          description:
+            'The main question: which is more popular? Compare indie and AAA games across revenue, ratings, player counts, and reviews. Each axis tells a different story. Filter by year to see how the landscape shifts over time. <span class="controls-text">Controls: Hover over metric icons. Use year buttons to filter.</span>',
+        },
+        2: {
+          title: "CHAPTER 2: THE GAME LANDSCAPE",
+          description:
+            'To understand popularity, we first need context. Every game lives somewhere in the space between price and quality. Pink dots are Action games, green dots are Indie games. Navigate the field to discover patterns. <span class="controls-text">Controls: Arrow keys or WASD to move.</span>',
+        },
+        3: {
+          title: "CHAPTER 3: THE PRICE WAR",
+          description:
+            'Price is a key factor. Where do games cluster? Studio games by price range (pink Strike cards) face off against indie games (green Defend card). The arrow reveals where most games land in the market. <span class="controls-text">Controls: Click pink Strike cards to attack.</span>',
+        },
+        4: {
+          title: "CHAPTER 4: THE SOCIAL LAYER",
+          description:
+            "Games aren't just products—they're spaces where players meet. Compare multiplayer (left) vs solo experiences (right). Red dots are Indie, blue are Studio. Dive deeper to see cooperative vs competitive dynamics. <span class=\"controls-text\">Controls: Hover to highlight. Click left side for details.</span>",
+        },
+        5: {
+          title: "CHAPTER 5: THE GENRE UNIVERSE",
+          description:
+            'Finally, explore the genre space: navigate a universe where games cluster by genre. Node size shows player activity, opacity reveals review sentiment. Pink nodes are Studio games, teal are Indie. Each cluster tells a story about what players love. <span class="controls-text">Controls: Hover over visualization, then use arrow keys to navigate.</span>',
+        },
+      };
+
+      function showChapter(chapterNum) {
+        // Hide all chapters
+        document
+          .querySelectorAll(".chapter-container")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".chapter-btn")
+          .forEach((el) => el.classList.remove("active"));
+
+        // Show selected chapter
+        const chapter = document.getElementById(`chapter-${chapterNum}`);
+        const btn = document.querySelector(`[data-chapter="${chapterNum}"]`);
+        if (chapter) chapter.classList.add("active");
+        if (btn) btn.classList.add("active");
+
+        // Update header content
+        if (chapterData[chapterNum]) {
+          document.getElementById("chapter-title").textContent =
+            chapterData[chapterNum].title;
+          document.getElementById("chapter-description").innerHTML =
+            chapterData[chapterNum].description;
+        }
+
+        // Update level indicator
+        currentChapter = chapterNum;
+        document.getElementById("current-level").textContent = chapterNum;
+
+        // Update button states
+        document.getElementById("prev-btn").disabled = chapterNum === 1;
+        document.getElementById("next-btn").disabled =
+          chapterNum === totalChapters;
+      }
+
+      // Button navigation
+      document.getElementById("next-btn").addEventListener("click", () => {
+        if (currentChapter < totalChapters) {
+          showChapter(currentChapter + 1);
+        }
+      });
+
+      document.getElementById("prev-btn").addEventListener("click", () => {
+        if (currentChapter > 1) {
+          showChapter(currentChapter - 1);
+        }
+      });
+
+      // Chapter selector buttons
+      document.querySelectorAll(".chapter-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const chapterNum = parseInt(btn.dataset.chapter);
+          showChapter(chapterNum);
+        });
+      });
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+          if (currentChapter < totalChapters) {
+            showChapter(currentChapter + 1);
+          }
+        } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+          if (currentChapter > 1) {
+            showChapter(currentChapter - 1);
+          }
+        } else if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+          if (currentChapter > 1) {
+            showChapter(currentChapter - 1);
+          }
+        } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+          if (currentChapter < totalChapters) {
+            showChapter(currentChapter + 1);
+          }
+        }
+      });
+
+      // Initialize on load
+      showChapter(1);
+    </script>
   </body>
 </html>

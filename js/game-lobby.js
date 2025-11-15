@@ -15,7 +15,10 @@ let svg = d3.select("#game-lobby").append("svg")
 svg.append("text")
     .text("Choose your team! (hover)")
     .attr("transform", "translate(" + (width / 2) + ", 0)")
-    .attr("text-anchor", "middle");
+    .attr("text-anchor", "middle")
+    .attr("fill", "#c7d5e0")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "14px");
 
 let leftTeam = svg.append("g")
     .attr("class", "left-team")
@@ -25,7 +28,10 @@ leftTeam.append("text")
     .attr("class", "left-team-text")
     .text("Multiplayer (Choose me!)")
     .attr("x", width / 4)
-    .attr("text-anchor", "middle");
+    .attr("text-anchor", "middle")
+    .attr("fill", "#c7d5e0")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "14px");
 
 let rightTeam = svg.append("g")
     .attr("class", "right-team")
@@ -35,14 +41,20 @@ rightTeam.append("text")
     .attr("class", "right-team-text")
     .text("Non-multiplayer")
     .attr("x", 3 * width / 4)
-    .attr("text-anchor", "middle");
+    .attr("text-anchor", "middle")
+    .attr("fill", "#c7d5e0")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "14px");
 
 let indieLegend = svg.append("g")
     .attr("transform", "translate(50, " + (height - 50) + ")");
 
 indieLegend.append("text")
     .text("Indie:")
-    .attr("text-anchor", "middle");
+    .attr("text-anchor", "middle")
+    .attr("fill", "#c7d5e0")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "12px");
 
 indieLegend.append("circle")
     .attr("r", 5)
@@ -54,7 +66,10 @@ let nonIndieLegend = svg.append("g")
 
 nonIndieLegend.append("text")
     .text("Non-indie:")
-    .attr("text-anchor", "middle");
+    .attr("text-anchor", "middle")
+    .attr("fill", "#c7d5e0")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "12px");
 
 nonIndieLegend.append("circle")
     .attr("r", 5)
@@ -146,6 +161,10 @@ function changeSelection(cooperativeData, competitiveData) {
     .attr("x", width - 50)
     .attr("y", height - 50)
     .text("Back")
+    .attr("fill", "#66c0f4")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "14px")
+    .attr("cursor", "pointer")
     .on("click", function () {
         d3.selectAll(".left-team-text")
             .transition()
