@@ -400,16 +400,20 @@
       </div>
 
       <div class="viz-section">
-        <h2>Visualization 2: Game Lobby</h2>
+        <h2>Visualization 2: Peak Battle - Indie vs Studio</h2>
         <p class="viz-description">
-          Multiplayer vs non-multiplayer games. Hover over the left side to see
-          more details.
+          Strike cards represent studio games in different price ranges, while
+          the Defend card represents all indie games. The number below each card
+          shows how many games fall into that category. Click any Strike card to
+          attack the Defend block!
+          <br />Click Strike cards to attack.
         </p>
-        <div
-          class="viz-placeholder"
-          id="game-lobby"
-          style="height: 100%; width: 100%"
-        ></div>
+
+        <iframe
+          src="battle.html"
+          class="viz-iframe"
+          title="Peak Battle Visualization"
+        ></iframe>
       </div>
 
       <div class="viz-section">
@@ -456,6 +460,36 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="viz-section">
+        <h2>Visualization 4: Game Lobby</h2>
+        <p class="viz-description">
+          Multiplayer vs non-multiplayer games. Hover over the left side to see
+          more details.
+        </p>
+        <div
+          class="viz-placeholder"
+          id="game-lobby"
+          style="height: 100%; width: 100%"
+        ></div>
+      </div>
+
+      <div class="viz-section">
+        <h2>Visualization 5: Space Chart</h2>
+        <p class="viz-description">
+          Navigate through a galaxy of games using arrow keys. Games are
+          clustered by genre, node size is player count, opacity is positive
+          reviews. Pink nodes are studio games, teal nodes are indie games. Fly
+          close to games to see details.
+          <br />Arrow keys to move (hover over visualization first).
+        </p>
+
+        <iframe
+          src="space-chart.html"
+          class="viz-iframe"
+          title="Space Chart"
+        ></iframe>
       </div>
     </div>
 
