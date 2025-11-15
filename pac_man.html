@@ -73,13 +73,51 @@
             left:10px;
             top:10px;
             display:flex;
-            gap:12px;
             align-items:center;
+            gap:12px; /* 左边 badge 之间的 gap 保留 */
             font-family:"Press Start 2P", monospace;
             font-size:10px;
             color:var(--ink);
-
+            width:620px; /* 你原本 game 是 640px，预留一点空间 */
             z-index: 999;
+        }
+
+        .hud-spacer {
+            flex: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-left: 0;
+        }
+
+        .end-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            padding: 14px 20px;
+            font-size: 26px;
+            color: #ffe6a7;
+            text-shadow:
+                    0 0 6px rgba(255,255,200,0.9),
+                    0 0 12px rgba(255,210,74,1),
+                    0 0 20px rgba(255,210,74,1);
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #ffd24a;
+            border-radius: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .4s ease, transform .4s ease;
+            z-index: 99999;
+            white-space: nowrap;
+            width: max-content;
+            max-width: none;
+        }
+        .end-message.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.05);
         }
 
         .hud .badge{
@@ -88,11 +126,6 @@
             font-size:12px;
             background:#121629;
             box-shadow:0 0 0 1px #23324d inset;
-        }
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-left: 160px;
         }
 
         .hint {
@@ -294,6 +327,7 @@
 <div id="wrap">
     <h1 class="main-title pix">STEAM DATASET — PLAYABLE PAC-MAN VISUALIZATION</h1>
     <div class="frame">
+        <div id="endMessage" class="end-message pix">Full Dataset Explored!</div>
         <div class="hud">
             <span class="pix">TOTAL</span>
             <span id="scoreTotal" class="badge">0</span>
@@ -303,6 +337,8 @@
 
             <span class="pix">INDIE</span>
             <span id="scoreIndie" class="badge" style="color:#001a12; background:var(--indie); box-shadow:0 0 12px var(--indie);">0</span>
+
+            <div class="hud-spacer"></div>
 
             <div class="controls">
                 <button id="reset" class="btn pix-icon" title="Restart">
@@ -815,6 +851,18 @@
                         pacFlash();
                         updateRanking();
                         flashRanking(d);
+                        // --- Check if all pellets eaten ---
+                        if (score.total >= data.length) {
+                            const box = document.getElementById('endMessage');
+
+                            if (!box.classList.contains('show')) {
+                                box.classList.add('show');
+
+                                setTimeout(() => {
+                                    box.classList.remove('show');
+                                }, 3000);
+                            }
+                        }
                     }
                 });
 
