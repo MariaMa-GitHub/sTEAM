@@ -49,6 +49,7 @@ rightTeam.append("text")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "14px");
 
+// Legend
 let indieLegend = svg.append("g")
     .attr("transform", "translate(50, " + (height - 50) + ")");
 
@@ -84,17 +85,25 @@ nonIndieLegend.append("image")
     .attr("x", 75);
 
 // append tooltip
-tooltip = d3.select(".main-lobby").append('div')
+tooltip = d3.select("#game-lobby").append('div')
     .attr('class', "tooltip")
+    .style("opacity", 0)
+    .style("background-color", "#2a2a3e")
+    .style("border", "solid")
+    .style("border-width", "1px")
+    .style("border-radius", "5px")
+    .style("padding", "10px")
+    .style("position", "absolute")
 
 Object.defineProperty(window, 'data', {
 	get: function() { return _data; },
 	set: function(value) {
 		_data = value;
-		updateVisualization();
+		updateVisualization(0);
 	}
 });
 
+// Load data
 function loadData() {
 	d3.csv("data/games.csv").then(csv=> {
 		data = csv;
@@ -103,102 +112,23 @@ function loadData() {
 
 loadData();
 
-function changeSelection(cooperativeData, competitiveData) {
-    d3.selectAll(".left-team-text")
-        .transition()
-        .duration(500)
-        .text("Cooperative")
-
-    d3.selectAll(".right-team-text")
-        .transition()
-        .duration(500)
-        .text("Competitive")
-
-    leftPlayer = leftTeam.selectAll("image")
-        .data(cooperativeData);
-
-    // Enter
-    leftPlayer.enter().append("image")
-        .attr("class", "left-player")
-        .merge(leftPlayer)
-        .attr("x", (d, index) => (index % 30) * width / 60 - 15)
-        .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-        .attr("width", 16)
-        .attr("height", 16)
-        .attr("xlink:href", d => {
-            if (d.genres.includes('Indie'))
-                return icons[0]
-            else
-                return icons[1]
-        });
-
-    leftPlayer.exit().remove();
-
-    let rightPlayer = rightTeam.selectAll("image")
-        .data(competitiveData);
-
-    // Enter
-    rightPlayer.enter().append("image")
-        .attr("class", "right-player")
-        .merge(rightPlayer)
-        .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
-        .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-        .attr("width", 16)
-        .attr("height", 16)
-        .attr("xlink:href", d => {
-            if (d.genres.includes('Indie'))
-                return icons[0]
-            else
-                return icons[1]
-        });
-
-    rightPlayer.exit().remove();
-
-    svg.append("text")
-    .attr("class", "back")
-    .attr("x", width - 50)
-    .attr("y", height - 50)
-    .text("Back")
-    .attr("fill", "#66c0f4")
-    .attr("font-family", "ui-monospace, 'Courier New', monospace")
-    .attr("font-size", "14px")
-    .attr("cursor", "pointer")
-    .on("click", function () {
-        d3.selectAll(".left-team-text")
-            .transition()
-            .duration(500)
-            .text("Multiplayer (Choose me!)")
-        
-        d3.selectAll(".right-team-text")
-            .transition()
-            .duration(500)
-            .text("Non-multiplayer")
-
-        d3.selectAll(".back")
-            .style("opacity", 0)
-
-        updateVisualization()
-    });
-}
-
-function updateVisualization() {
+function updateVisualization(selection) {
     let multiplayerData = data.filter(d => d.categories.includes('Multi-player'));
     let nonmultiplayerData = data.filter(d => (d.categories.includes('Multi-player')) == false);
     let cooperativeData = multiplayerData.filter(d => d.categories.includes('Co-op'));
     let competitiveData = multiplayerData.filter(d => d.categories.includes('PvP'));
 
-    console.log(multiplayerData)
+    let numIndieMultiplayer = 0;
+    let numNonindieMultiplayer = 0;
+    let numIndieNonmultiplayer = 0;
+    let numNonindieNonmultiplayer = 0;
+    let numIndieCooperative = 0;
+    let numNonindieCooperative = 0;
+    let numIndieCompetitive = 0;
+    let numNonindieCompetitive = 0;
 
-    let numIndieMultiplayer;
-    let numNonindieMultiplayer;
-    let numIndieNonmultiplayer;
-    let numNonindieNonmultiplayer;
-    let numIndieCooperative;
-    let numNonindieCooperative;
-    let numIndieCompetitive;
-    let numNonindieCompetitive;
-
-    for (let i = 0; i < multiplayerData; i++) {
+    // Aggregation
+    for (let i = 0; i < multiplayerData.length; i++) {
         if (multiplayerData[i].genres.includes('Indie')) {
             numIndieMultiplayer++;
         }
@@ -207,7 +137,7 @@ function updateVisualization() {
         }
     }
 
-    for (let i = 0; i < nonmultiplayerData; i++) {
+    for (let i = 0; i < nonmultiplayerData.length; i++) {
         if (nonmultiplayerData[i].genres.includes('Indie')) {
             numIndieNonmultiplayer++;
         }
@@ -216,7 +146,7 @@ function updateVisualization() {
         }
     }
 
-    for (let i = 0; i < cooperativeData; i++) {
+    for (let i = 0; i < cooperativeData.length; i++) {
         if (cooperativeData[i].genres.includes('Indie')) {
             numIndieCooperative++;
         }
@@ -225,7 +155,7 @@ function updateVisualization() {
         }
     }
 
-    for (let i = 0; i < competitiveData; i++) {
+    for (let i = 0; i < competitiveData.length; i++) {
         if (competitiveData[i].genres.includes('Indie')) {
             numIndieCompetitive++;
         }
@@ -234,49 +164,97 @@ function updateVisualization() {
         }
     }
 
-    let leftPlayer = leftTeam.selectAll("image")
-		.data(multiplayerData);
+    let selectionsIndieLeft = [numIndieMultiplayer, numIndieCooperative];
+    let selectionsNonindieLeft = [numNonindieMultiplayer, numNonindieCooperative];
+    let selectionsIndieRight = [numIndieNonmultiplayer, numIndieCompetitive];
+    let selectionsNonindieRight = [numNonindieNonmultiplayer, numNonindieCompetitive];
 
-	// Enter
-	leftPlayer.enter().append("image")
-		.attr("class", "left-player")
-		.merge(leftPlayer)
-		.attr("x", (d, index) => (index % 30) * width / 60 - 15)
-		.attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-		.attr("width", 16)
-        .attr("height", 16)
-		.attr("xlink:href", d => {
-            if (d.genres.includes('Indie'))
-                return icons[0]
-            else
-                return icons[1]
-        });
+    if (selection == 0) {
+        let leftPlayer = leftTeam.selectAll("image")
+            .data(multiplayerData);
 
-	leftPlayer.exit().remove();
+        // Enter
+        leftPlayer.enter().append("image")
+            .attr("class", "left-player")
+            .merge(leftPlayer)
+            .attr("x", (d, index) => (index % 30) * width / 60 - 15)
+            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
+            .attr("width", 16)
+            .attr("height", 16)
+            .attr("xlink:href", d => {
+                if (d.genres.includes('Indie'))
+                    return icons[0]
+                else
+                    return icons[1]
+            });
 
-    let rightPlayer = rightTeam.selectAll("image")
-		.data(nonmultiplayerData);
+        leftPlayer.exit().remove();
 
-	// Enter
-	rightPlayer.enter().append("image")
-		.attr("class", "right-player")
-		.merge(rightPlayer)
-		.attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
-		.attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-		.attr("width", 16)
-        .attr("height", 16)
-		.attr("xlink:href", d => {
-            if (d.genres.includes('Indie'))
-                return icons[0]
-            else
-                return icons[1]
-        });
+        let rightPlayer = rightTeam.selectAll("image")
+            .data(nonmultiplayerData);
 
-	rightPlayer.exit().remove();
+        // Enter
+        rightPlayer.enter().append("image")
+            .attr("class", "right-player")
+            .merge(rightPlayer)
+            .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
+            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
+            .attr("width", 16)
+            .attr("height", 16)
+            .attr("xlink:href", d => {
+                if (d.genres.includes('Indie'))
+                    return icons[0]
+                else
+                    return icons[1]
+            });
+
+        rightPlayer.exit().remove();
+    }
+    else {
+        leftPlayer = leftTeam.selectAll("image")
+            .data(cooperativeData);
+
+        // Enter
+        leftPlayer.enter().append("image")
+            .attr("class", "left-player")
+            .merge(leftPlayer)
+            .attr("x", (d, index) => (index % 30) * width / 60 - 15)
+            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
+            .attr("width", 16)
+            .attr("height", 16)
+            .attr("xlink:href", d => {
+                if (d.genres.includes('Indie'))
+                    return icons[0]
+                else
+                    return icons[1]
+            });
+
+        leftPlayer.exit().remove();
+
+        let rightPlayer = rightTeam.selectAll("image")
+            .data(competitiveData);
+
+        // Enter
+        rightPlayer.enter().append("image")
+            .attr("class", "right-player")
+            .merge(rightPlayer)
+            .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
+            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
+            .attr("width", 16)
+            .attr("height", 16)
+            .attr("xlink:href", d => {
+                if (d.genres.includes('Indie'))
+                    return icons[0]
+                else
+                    return icons[1]
+            });
+
+        rightPlayer.exit().remove();
+    }
 
     leftTeam.append("rect")
         .attr("width", width / 2)
-        .attr("height", height)
+        .attr("height", height / 2)
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".left-player")
@@ -287,15 +265,15 @@ function updateVisualization() {
 
             tooltip
                 .style("opacity", 1)
-                .style("left", event.pageX + 20 + "px")
-                .style("top", event.pageY + "px")
+                .style("left", event.pageX - 50 + "px")
+                .style("top", event.pageY - 500 + "px")
                 .html(`
-                    <div style="border: thin solid grey; border-radius: 5px; background: lightgrey; padding: 20px">
-                        <h4> Number of indie games: ${numIndieMultiplayer}</h4>      
-                        <h4> Number of non-indie games: ${numNonindieMultiplayer}</h4>                      
+                    <div style="border: black; border-radius: 1px; background: #2a2a3e; padding: 10px">
+                        <h4> Number of indie games: ${selectionsIndieLeft[selection]}</h4>      
+                        <h4> Number of non-indie games: ${selectionsNonindieLeft[selection]}</h4>                      
                     </div>`);
         })
-        .on("mouseleave", function () {
+        .on("mouseout", function () {
             d3.selectAll(".left-player")
                 .transition()
                 .duration(200)
@@ -309,13 +287,56 @@ function updateVisualization() {
                 .html(``);
         })
         .on("click", function (d) {
-            changeSelection(cooperativeData, competitiveData)
+            tooltip
+                .style("opacity", 0)
+                .style("left", 0)
+                .style("top", 0)
+                .html(``);
+
+            d3.selectAll(".left-team-text")
+                .transition()
+                .duration(1000)
+                .text("Cooperative")
+
+            d3.selectAll(".right-team-text")
+                .transition()
+                .duration(1000)
+                .text("Competitive")
+
+            // Add back option to go back to previous selection
+            svg.append("text")
+                .attr("class", "back")
+                .attr("x", width - 50)
+                .attr("y", height - 50)
+                .text("Back")
+                .attr("fill", "#66c0f4")
+                .attr("font-family", "ui-monospace, 'Courier New', monospace")
+                .attr("font-size", "14px")
+                .attr("cursor", "pointer")
+                .on("click", function () {
+                    d3.selectAll(".left-team-text")
+                        .transition()
+                        .duration(1000)
+                        .text("Multiplayer (Choose me!)")
+                    
+                    d3.selectAll(".right-team-text")
+                        .transition()
+                        .duration(1000)
+                        .text("Non-multiplayer")
+
+                    updateVisualization(0)
+
+                    d3.selectAll(".back")
+                        .style("opacity", 0)
+                })
+                    
+            updateVisualization(1);
         });
 
     rightTeam.append("rect")
         .attr("x", width / 2)
         .attr("width", width / 2)
-        .attr("height", height)
+        .attr("height", height / 2)
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".right-player")
@@ -326,15 +347,15 @@ function updateVisualization() {
 
             tooltip
                 .style("opacity", 1)
-                .style("left", event.pageX + 20 + "px")
-                .style("top", event.pageY + "px")
+                .style("left", event.pageX - 50 + "px")
+                .style("top", event.pageY - 500 + "px")
                 .html(`
-                    <div style="border: thin solid grey; border-radius: 5px; background: lightgrey; padding: 20px">
-                        <h4> Number of indie games: ${numIndieNonmultiplayer}</h4>      
-                        <h4> Number of non-indie games: ${numNonindieNonmultiplayer}</h4>                      
+                    <div style="border: black; border-radius: 1px; background: #2a2a3e; padding: 10px">
+                        <h4> Number of indie games: ${selectionsIndieRight[selection]}</h4>      
+                        <h4> Number of non-indie games: ${selectionsNonindieRight[selection]}</h4>                      
                     </div>`);
         })
-        .on("mouseleave", function () {
+        .on("mouseout", function () {
             d3.selectAll(".right-player")
                 .transition()
                 .duration(200)
