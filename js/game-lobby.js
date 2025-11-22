@@ -83,11 +83,11 @@ indieLegend.append("text")
     .attr("fill", "#c7d5e0")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "12px")
-    .attr("y", 10);
+    .attr("y", 15);
 
 indieLegend.append("image")
-    .attr("width", 16)
-    .attr("height", 16)
+    .attr("width", 20)
+    .attr("height", 20)
     .attr('xlink:href', icons[0])
     .attr("x", 75);
 
@@ -100,11 +100,11 @@ nonIndieLegend.append("text")
     .attr("fill", "#c7d5e0")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "12px")
-    .attr("y", 10);
+    .attr("y", 15);
 
 nonIndieLegend.append("image")
-    .attr("width", 16)
-    .attr("height", 16)
+    .attr("width", 20)
+    .attr("height", 20)
     .attr('xlink:href', icons[1])
     .attr("x", 75);
 
@@ -146,17 +146,16 @@ function updateVisualization(selection1, selection2, sortIndex) {
     let onlinepvpData = competitiveData.filter(d => d.categories.includes('Online PvP'));
     let couchpvpData = competitiveData.filter(d => d.categories.includes('Shared/Split Screen PvP'));
 
+    let dataList = [multiplayerData, nonmultiplayerData, cooperativeData, competitiveData, onlinecoopData,
+        couchcoopData, onlinepvpData, couchpvpData
+    ];
+
     let sortFunctions = [compare1, compare2];
 
     if (sortIndex > 0) {
-        multiplayerData.sort(sortFunctions[sortIndex - 1])
-        nonmultiplayerData.sort(sortFunctions[sortIndex - 1])
-        cooperativeData.sort(sortFunctions[sortIndex - 1])
-        competitiveData.sort(sortFunctions[sortIndex - 1])
-        onlinecoopData.sort(sortFunctions[sortIndex - 1])
-        couchcoopData.sort(sortFunctions[sortIndex - 1])
-        onlinepvpData.sort(sortFunctions[sortIndex - 1])
-        couchpvpData.sort(sortFunctions[sortIndex - 1])
+        for (let i = 0; i < dataList.length; i++) {
+            dataList[i].sort(sortFunctions[sortIndex - 1])
+        }
     }
 
     let numIndieMultiplayer = 0;
@@ -176,75 +175,6 @@ function updateVisualization(selection1, selection2, sortIndex) {
     let numIndieCouchpvp = 0;
     let numNonindieCouchpvp = 0;
 
-    // Aggregation
-    for (let i = 0; i < multiplayerData.length; i++) {
-        if (multiplayerData[i].genres.includes('Indie')) {
-            numIndieMultiplayer++;
-        }
-        else {
-            numNonindieMultiplayer++;
-        }
-    }
-
-    for (let i = 0; i < nonmultiplayerData.length; i++) {
-        if (nonmultiplayerData[i].genres.includes('Indie')) {
-            numIndieNonmultiplayer++;
-        }
-        else {
-            numNonindieNonmultiplayer++;
-        }
-    }
-
-    for (let i = 0; i < cooperativeData.length; i++) {
-        if (cooperativeData[i].genres.includes('Indie')) {
-            numIndieCooperative++;
-        }
-        else {
-            numNonindieCooperative++;
-        }
-    }
-
-    for (let i = 0; i < competitiveData.length; i++) {
-        if (competitiveData[i].genres.includes('Indie')) {
-            numIndieCompetitive++;
-        }
-        else {
-            numNonindieCompetitive++;
-        }
-    }
-    for (let i = 0; i < onlinecoopData.length; i++) {
-        if (onlinecoopData[i].genres.includes('Indie')) {
-            numIndieOnlinecoop++;
-        }
-        else {
-            numNonindieOnlinecoop++;
-        }
-    }
-    for (let i = 0; i < onlinepvpData.length; i++) {
-        if (onlinepvpData[i].genres.includes('Indie')) {
-            numIndieOnlinepvp++;
-        }
-        else {
-            numNonindieOnlinepvp++;
-        }
-    }
-    for (let i = 0; i < couchcoopData.length; i++) {
-        if (couchcoopData[i].genres.includes('Indie')) {
-            numIndieCouchcoop++;
-        }
-        else {
-            numNonindieCouchcoop++;
-        }
-    }
-    for (let i = 0; i < couchpvpData.length; i++) {
-        if (couchpvpData[i].genres.includes('Indie')) {
-            numIndieCouchpvp++;
-        }
-        else {
-            numNonindieCouchpvp++;
-        }
-    }
-
     let selectionsLabelLeft = [["Multiplayer (Choose me!)"], ["Cooperative (Choose me!)"], ["Online Co-op", "Online PvP"]];
     let selectionsLabelRight = [["Non-multiplayer"], ["Competitive (Choose me!)"], ["Couch Co-op", "Couch PvP"]];
     let selectionsLeft = [[multiplayerData], [cooperativeData], [onlinecoopData, onlinepvpData]];
@@ -254,6 +184,30 @@ function updateVisualization(selection1, selection2, sortIndex) {
     let selectionsIndieRight = [[numIndieNonmultiplayer], [numIndieCompetitive], [numIndieCouchcoop, numIndieCouchpvp]];
     let selectionsNonindieRight = [[numNonindieNonmultiplayer], [numNonindieCompetitive], [numNonindieCouchcoop, numNonindieCouchpvp]];
 
+    // Aggregation
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < selectionsLeft[i].length; j++) {
+            for (let k = 0; k < selectionsLeft[i][j].length; k++) {
+                if (selectionsLeft[i][j][k].genres.includes('Indie')) {
+                    selectionsIndieLeft[i][j]++;
+                }
+                else {
+                    selectionsNonindieLeft[i][j]++
+                }
+            }
+        }
+        for (let j = 0; j < selectionsRight[i].length; j++) {
+            for (let k = 0; k < selectionsRight[i][j].length; k++) {
+                if (selectionsRight[i][j][k].genres.includes('Indie')) {
+                    selectionsIndieRight[i][j]++;
+                }
+                else {
+                    selectionsNonindieRight[i][j]++
+                }
+            }
+        }
+    }
+
     let leftPlayer = leftSide.selectAll("image")
         .data(selectionsLeft[selection1][selection2]);
 
@@ -262,8 +216,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         .attr("class", "left-player")
         .merge(leftPlayer)
         .attr("x", (d, index) => (index % 30) * width / 60 - 15)
-        .attr("width", 16)
-        .attr("height", 16)
+        .attr("width", 20)
+        .attr("height", 20)
         .attr("xlink:href", d => {
             if (d.genres.includes('Indie'))
                 return icons[0]
@@ -285,8 +239,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         .attr("class", "right-player")
         .merge(rightPlayer)
         .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
-        .attr("width", 16)
-        .attr("height", 16)
+        .attr("width", 20)
+        .attr("height", 20)
         .attr("xlink:href", d => {
             if (d.genres.includes('Indie'))
                 return icons[0]
@@ -306,8 +260,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".left-player")
-                .attr("width", 20)
-                .attr("height", 20);
+                .attr("width", 25)
+                .attr("height", 25);
 
             tooltip
                 .style("opacity", 1)
@@ -321,8 +275,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         })
         .on("mouseout", function () {
             d3.selectAll(".left-player")
-                .attr("width", 16)
-                .attr("height", 16);
+                .attr("width", 20)
+                .attr("height", 20);
 
             tooltip
                 .style("opacity", 0)
@@ -386,8 +340,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".right-player")
-                .attr("width", 20)
-                .attr("height", 20);
+                .attr("width", 25)
+                .attr("height", 25);
 
             tooltip
                 .style("opacity", 1)
@@ -401,8 +355,8 @@ function updateVisualization(selection1, selection2, sortIndex) {
         })
         .on("mouseout", function () {
             d3.selectAll(".right-player")
-                .attr("width", 16)
-                .attr("height", 16);
+                .attr("width", 20)
+                .attr("height", 20);
             
             tooltip
                 .style("opacity", 0)
