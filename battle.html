@@ -35,6 +35,20 @@
         stroke-width: 5;
       }
 
+      .card.drained {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .drained-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 18px;
+        fill: #ff3d7f;
+        text-anchor: middle;
+        font-weight: bold;
+        pointer-events: none;
+      }
+
       .card-text {
         font-family: "Press Start 2P", monospace;
         font-size: 14px;
@@ -80,14 +94,42 @@
       .info-box {
         position: fixed;
         bottom: 20px;
-        left: 20px;
+        right: 20px;
         background: rgba(14, 18, 32, 0.95);
         border: 2px solid #66c0f4;
         border-radius: 8px;
         padding: 15px;
+        font-size: 0.7rem;
+        line-height: 1.8;
+        max-width: 200px;
+      }
+
+      .explanation-box {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(14, 18, 32, 0.95);
+        border: 2px solid #ffd700;
+        border-radius: 8px;
+        padding: 15px;
         font-size: 0.6rem;
         line-height: 1.8;
-        max-width: 400px;
+        max-width: 200px;
+        max-height: 500px;
+      }
+
+      .title-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 20px;
+        fill: #66c0f4;
+        text-anchor: middle;
+      }
+
+      .subtitle-text {
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        fill: #c7d5e0;
+        text-anchor: middle;
       }
     </style>
   </head>
@@ -100,8 +142,35 @@
     ></svg>
     <div class="info-box" id="info">
       <div style="color: #66c0f4; margin-bottom: 5px">📊 PEAK BATTLE</div>
-      <div style="font-size: 0.55rem">
+      <div style="font-size: 0.6rem">
         Click pink Strike cards to attack green Defend card!
+      </div>
+    </div>
+
+    <div class="explanation-box">
+      <div style="color: #ffd700; margin-bottom: 8px; font-size: 0.7rem;">
+        🎮 HOW TO READ THIS
+      </div>
+      <div style="margin-bottom: 10px;">
+        <strong style="color: #ff6b9d;">Pink Strike Cards:</strong>
+      </div>
+      <div style="margin-bottom: 10px;">
+        Studio games at different price points. Each card's damage = number of studio games in that price range.
+      </div>
+      <div style="margin-bottom: 10px;">
+        <strong style="color: #00ff88;">Green Defend Card:</strong>
+      </div>
+      <div style="margin-bottom: 10px;">
+        All indie games combined. Block strength = total indie games.
+      </div>
+      <div style="margin-bottom: 10px;">
+        <strong style="color: #ffd700;">The Peak (⛰️):</strong>
+      </div>
+      <div style="margin-bottom: 10px;">
+        Arrow points to the price range with the MOST studio games.
+      </div>
+      <div style="color: #c7d5e0; font-size: 0.55rem; border-top: 1px solid #66c0f4; padding-top: 8px; margin-top: 8px;">
+        <strong>Insight:</strong> This shows which price ranges dominate for studio games vs. the collective strength of all indie games.
       </div>
     </div>
 
@@ -121,6 +190,7 @@
           x: 100,
           y: 400,
           priceRange: [0, 10],
+          used: false,
         },
         {
           id: 1,
@@ -140,6 +210,7 @@
           x: 300,
           y: 400,
           priceRange: [10, 30],
+          used: false,
         },
         {
           id: 3,
@@ -149,6 +220,7 @@
           x: 550,
           y: 400,
           priceRange: [30, 60],
+          used: false,
         },
         {
           id: 4,
@@ -158,6 +230,7 @@
           x: 750,
           y: 400,
           priceRange: [60, 100],
+          used: false,
         },
       ];
 
@@ -216,14 +289,30 @@
       function drawVisualization() {
         svg.selectAll("*").remove();
 
-        // Title: Peak label
+        // Main Title
+        svg
+          .append("text")
+          .attr("class", "title-text")
+          .attr("x", 500)
+          .attr("y", 30)
+          .text("STUDIO vs INDIE: Price Battle");
+
+        // Subtitle
+        svg
+          .append("text")
+          .attr("class", "subtitle-text")
+          .attr("x", 500)
+          .attr("y", 50)
+          .text("Studio games split by price range fight indie's combined strength");
+
+        // Peak label
         svg
           .append("text")
           .attr("class", "peak-label")
           .attr("x", 500)
-          .attr("y", 30)
+          .attr("y", 75)
           .attr("text-anchor", "middle")
-          .text("⛰️ PEAK (most games)");
+          .text("⛰️ PEAK = Most Studio Games");
 
         // Find which price range has most games
         const maxCard = cards
@@ -235,15 +324,31 @@
         // Arrow pointing to peak
         if (maxCard && maxCard.gameCount > 0) {
           const arrowX = maxCard.x;
+          
+          // Add arrowhead marker definition
+          svg
+            .append("defs")
+            .append("marker")
+            .attr("id", "arrowhead")
+            .attr("markerWidth", 10)
+            .attr("markerHeight", 10)
+            .attr("refX", 5)
+            .attr("refY", 3)
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "0 0, 10 3, 0 6")
+            .attr("fill", "#ffd700");
+
           svg
             .append("line")
             .attr("x1", 500)
-            .attr("y1", 40)
+            .attr("y1", 85)
             .attr("x2", arrowX)
-            .attr("y2", 280)
+            .attr("y2", 300)
             .attr("stroke", "#ffd700")
-            .attr("stroke-width", 2)
-            .attr("stroke-dasharray", "5,5");
+            .attr("stroke-width", 3)
+            .attr("stroke-dasharray", "5,5")
+            .attr("marker-end", "url(#arrowhead)");
         }
 
         // X-axis label (LEFT SIDE)
@@ -315,21 +420,29 @@
           .attr("height", 150)
           .attr("rx", 10)
           .on("click", function (event, d) {
-            if (d.type === "strike") {
+            if (d.type === "strike" && !d.used) {
               attackDefend(d);
             }
           })
           .on("mouseover", function (event, d) {
             if (d.type === "strike") {
-              d3.select("#info").html(`
-                    <div style="color: #ff6b9d;">⚔️ STRIKE CARD</div>
-                    <div>Price Range: ${d.priceRange[0]}-$${
-                d.priceRange[1]
-              }</div>
-                    <div>Studio Games: ${d.gameCount || 0}</div>
-                    <div>Attack Damage: ${d.damage || 0}</div>
-                    <div style="margin-top: 5px; font-size: 0.5rem;">Click to attack!</div>
-                `);
+              if (d.used) {
+                d3.select("#info").html(`
+                      <div style="color: #8f98a0;">💀 DRAINED CARD</div>
+                      <div>This card has been used!</div>
+                      <div style="margin-top: 5px; font-size: 0.5rem;">Already dealt ${d.damage || 0} damage</div>
+                  `);
+              } else {
+                d3.select("#info").html(`
+                      <div style="color: #ff6b9d;">⚔️ STRIKE CARD</div>
+                      <div>Price Range: ${d.priceRange[0]}-${
+                  d.priceRange[1]
+                }</div>
+                      <div>Studio Games: ${d.gameCount || 0}</div>
+                      <div>Attack Damage: ${d.damage || 0}</div>
+                      <div style="margin-top: 5px; font-size: 0.5rem;">Click to attack!</div>
+                  `);
+              }
             } else {
               d3.select("#info").html(`
                     <div style="color: #00ff88;">🛡️ DEFEND CARD</div>
@@ -420,7 +533,11 @@
       function attackDefend(strikeCard) {
         const damage = strikeCard.damage || 0;
         defendHealth -= damage;
+        
+        // Mark the strike card as used
+        strikeCard.used = true;
 
+        // Update defend card value
         d3.select("#defend-value")
           .transition()
           .duration(300)
@@ -429,6 +546,24 @@
           .duration(300)
           .style("fill", "#fff")
           .text(Math.max(0, defendHealth));
+
+        // Make the strike card look drained
+        const cardGroup = svg.selectAll(".card-group")
+          .filter(d => d.id === strikeCard.id);
+        
+        cardGroup.select("rect")
+          .classed("drained", true);
+
+        // Add "DRAINED" text overlay
+        cardGroup
+          .append("text")
+          .attr("class", "drained-text")
+          .attr("y", -5)
+          .text("DRAINED")
+          .style("opacity", 0)
+          .transition()
+          .duration(500)
+          .style("opacity", 1);
 
         // Damage animation
         const defenderCard = cards.find((c) => c.type === "defend");
@@ -449,7 +584,7 @@
 
         d3.select("#info").html(`
         <div style="color: #ff6b9d;">⚔️ ATTACK!</div>
-        <div>Strike ($${strikeCard.priceRange[0]}-$${
+        <div>Strike (${strikeCard.priceRange[0]}-${
           strikeCard.priceRange[1]
         }) → ${damage} damage!</div>
         <div style="color: #00ff88;">Defend: ${Math.max(
