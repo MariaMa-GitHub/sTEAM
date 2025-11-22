@@ -615,7 +615,6 @@
                     const reviews = row.querySelector('.rank-reviews')?.textContent ?? '';
                     const price = row.querySelector('.rank-price')?.textContent ?? '';
 
-                    // tooltip 内容（根据排行榜类型自动显示）
                     let html = `<b>${name}</b><br>`;
                     if (price) html += `Price: ${price}<br>`;
                     if (rating) html += `Rating: ${rating}<br>`;
