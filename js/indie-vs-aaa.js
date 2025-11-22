@@ -3,6 +3,7 @@ let currentYear = "All";
 let indieData = {};
 let aaaData = {};
 let currentHoveredMetric = null;
+let hoveredElements = new Set();
 
 const radarConfig = {
   width: 350,
@@ -160,11 +161,11 @@ function createYearButtons() {
   });
 
   const sortedYears = Array.from(years).sort();
-  const yearButtonsContainer = d3.select("#year-buttons");
+  const container = d3.select("#year-buttons");
 
-  yearButtonsContainer.selectAll("*").remove();
+  container.selectAll("*").remove();
 
-  yearButtonsContainer
+  container
     .append("button")
     .attr("class", "year-button active")
     .text("All")
@@ -177,7 +178,7 @@ function createYearButtons() {
     });
 
   sortedYears.forEach((year) => {
-    yearButtonsContainer
+    container
       .append("button")
       .attr("class", "year-button")
       .text(year)
@@ -201,16 +202,14 @@ function updateYearButtons() {
 }
 
 function updateData() {
-  let filteredData = gameData;
+  let data = gameData;
 
   if (currentYear !== "All") {
-    filteredData = gameData.filter(
-      (game) => game.release_year === currentYear
-    );
+    data = gameData.filter((game) => game.release_year === currentYear);
   }
 
-  const indieGames = filteredData.filter((game) => game.isIndie);
-  const aaaGames = filteredData.filter((game) => !game.isIndie);
+  const indieGames = data.filter((game) => game.isIndie);
+  const aaaGames = data.filter((game) => !game.isIndie);
 
   indieData = {
     revenue: calculateRevenue(indieGames),
@@ -259,14 +258,14 @@ function calculateRevenue(games) {
 }
 
 function calculateAverageRating(games) {
-  const gamesWithRatings = games.filter((game) => game.review_score > 0);
-  if (gamesWithRatings.length === 0) return 0;
+  const withRatings = games.filter((game) => game.review_score > 0);
+  if (withRatings.length === 0) return 0;
 
-  const totalRating = gamesWithRatings.reduce(
+  const total = withRatings.reduce(
     (sum, game) => sum + game.review_score,
     0
   );
-  return totalRating / gamesWithRatings.length;
+  return total / withRatings.length;
 }
 
 function createRadarCharts() {
@@ -299,12 +298,12 @@ function createRadarChart(containerId, data, type) {
   };
 
   const normalizedData = metrics.map((metric) => {
-    const value = data[metric.key];
-    const maxValue = maxValues[metric.key];
+    const val = data[metric.key];
+    const max = maxValues[metric.key];
     return {
       ...metric,
-      value: maxValue > 0 ? (value / maxValue) * 100 : 0,
-      rawValue: value,
+      value: max > 0 ? (val / max) * 100 : 0,
+      rawValue: val,
     };
   });
 
@@ -367,6 +366,7 @@ function createRadarChart(containerId, data, type) {
     .enter()
     .append("circle")
     .attr("class", `radar-point ${type}-point`)
+    .attr("data-metric", (d) => d.key)
     .attr(
       "cx",
       (d, i) =>
@@ -383,16 +383,24 @@ function createRadarChart(containerId, data, type) {
     .style("stroke-width", 3)
     .style("cursor", "pointer")
     .on("mouseover", function (event, d) {
-      d3.select(this)
-        .attr("r", 8)
-        .style("filter", "drop-shadow(0 0 8px rgba(102, 192, 244, 0.8))");
-      showTooltip(event, d, type);
+      hoveredElements.add(this);
+      if (currentHoveredMetric !== d.key) {
+        currentHoveredMetric = d.key;
+        highlightMetric(d.key);
+        updateStatsBars();
+      }
+      showTooltipsForMetric(d.key, event);
     })
     .on("mouseout", function() {
-      d3.select(this)
-        .attr("r", 6)
-        .style("filter", null);
-      hideTooltip();
+      hoveredElements.delete(this);
+      setTimeout(() => {
+        if (hoveredElements.size === 0 && currentHoveredMetric !== null) {
+          currentHoveredMetric = null;
+          unhighlightAll();
+          updateStatsBars();
+          hideTooltip();
+        }
+      }, 50);
     });
 
   chartGroup
@@ -401,6 +409,7 @@ function createRadarChart(containerId, data, type) {
     .enter()
     .append("text")
     .attr("class", "radar-label")
+    .attr("data-metric", (d) => d.key)
     .attr(
       "x",
       (d, i) => Math.cos(angleScale(i) - Math.PI / 2) * (radius + 20)
@@ -410,29 +419,67 @@ function createRadarChart(containerId, data, type) {
       (d, i) => Math.sin(angleScale(i) - Math.PI / 2) * (radius + 20)
     )
     .text((d) => d.icon)
-    .style("font-size", "16px")
+    .style("font-size", "20px")
     .style("fill", type === "indie" ? "#ff6b9d" : "#4ecdc4")
     .on("mouseover", function (event, d) {
-      currentHoveredMetric = d.key;
-      updateStatsBars();
-      showTooltip(event, d, type);
+      hoveredElements.add(this);
+      if (currentHoveredMetric !== d.key) {
+        currentHoveredMetric = d.key;
+        highlightMetric(d.key);
+        updateStatsBars();
+      }
+      showTooltipsForMetric(d.key, event);
     })
     .on("mouseout", function () {
-      currentHoveredMetric = null;
-      updateStatsBars();
-      hideTooltip();
+      hoveredElements.delete(this);
+      setTimeout(() => {
+        if (hoveredElements.size === 0 && currentHoveredMetric !== null) {
+          currentHoveredMetric = null;
+          unhighlightAll();
+          updateStatsBars();
+          hideTooltip();
+        }
+      }, 50);
+    });
+}
+
+function highlightMetric(metricKey) {
+  if (!metricKey) return;
+  
+  d3.selectAll(".radar-point")
+    .filter(function() {
+      return d3.select(this).attr("data-metric") === metricKey;
+    })
+    .each(function() {
+      d3.select(this)
+        .attr("r", 8)
+        .style("filter", "drop-shadow(0 0 12px rgba(102, 192, 244, 1))")
+        .style("stroke-width", 4)
+        .classed("highlighted", true);
     });
 
-  chartGroup
-    .append("text")
-    .attr("class", "center-icon")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .text(type === "indie" ? "👤" : "👤")
-    .style("font-size", "24px")
-    .style("fill", type === "indie" ? "#ff6b9d" : "#4ecdc4");
+  d3.selectAll(".radar-label")
+    .filter(function() {
+      return d3.select(this).attr("data-metric") === metricKey;
+    })
+    .each(function() {
+      d3.select(this).style("font-size", "24px")
+        .style("filter", "drop-shadow(0 0 12px rgba(255, 255, 255, 1))")
+        .classed("highlighted", true);
+    });
+}
+
+function unhighlightAll() {
+  d3.selectAll(".radar-point")
+    .attr("r", 6)
+    .style("filter", null)
+    .style("stroke-width", 3)
+    .classed("highlighted", false);
+
+  d3.selectAll(".radar-label")
+    .style("font-size", "20px")
+    .style("filter", null)
+    .classed("highlighted", false);
 }
 
 function updateRadarCharts() {
@@ -464,12 +511,12 @@ function updateRadarChartData(containerId, data, type) {
   };
 
   const normalizedData = metrics.map((metric) => {
-    const value = data[metric.key];
-    const maxValue = maxValues[metric.key];
+    const val = data[metric.key];
+    const max = maxValues[metric.key];
     return {
       ...metric,
-      value: maxValue > 0 ? (value / maxValue) * 100 : 0,
-      rawValue: value,
+      value: max > 0 ? (val / max) * 100 : 0,
+      rawValue: val,
     };
   });
 
@@ -506,6 +553,7 @@ function updateRadarChartData(containerId, data, type) {
   chartGroup
     .selectAll(`.radar-point.${type}-point`)
     .data(normalizedData)
+    .attr("data-metric", (d) => d.key)
     .attr(
       "cx",
       (d, i) =>
@@ -606,43 +654,94 @@ function updateStatsBars() {
     aaaIsDominant = aaaValue > indieValue;
   }
 
+  d3.selectAll(".stat-bar-fill").interrupt();
+
   d3.select(".indie-bar").classed("dominant", false);
   d3.select(".aaa-bar").classed("dominant", false);
+
+  d3.select(".indie-bar").style("opacity", null).style("transform", null).style("filter", null);
+  d3.select(".aaa-bar").style("opacity", null).style("transform", null).style("filter", null);
+
+  if (indieIsDominant) {
+    d3.select(".indie-bar").classed("dominant", true);
+    d3.select(".aaa-bar").style("opacity", "0.55").style("transform", "scale(0.93)").style("filter", "grayscale(25%)");
+  } else if (aaaIsDominant) {
+    d3.select(".aaa-bar").classed("dominant", true);
+    d3.select(".indie-bar").style("opacity", "0.55").style("transform", "scale(0.93)").style("filter", "grayscale(25%)");
+  }
 
   d3.select(".indie-bar .stat-bar-fill")
     .transition()
     .duration(300)
     .ease(d3.easeCubicInOut)
-    .style("width", `${indiePercentage}%`)
-    .on("end", function () {
-      if (indieIsDominant) {
-        d3.select(".indie-bar").classed("dominant", true);
-      }
-    });
+    .style("width", `${indiePercentage}%`);
 
   d3.select(".aaa-bar .stat-bar-fill")
     .transition()
     .duration(300)
     .ease(d3.easeCubicInOut)
-    .style("width", `${aaaPercentage}%`)
-    .on("end", function () {
-      if (aaaIsDominant) {
-        d3.select(".aaa-bar").classed("dominant", true);
-      }
-    });
+    .style("width", `${aaaPercentage}%`);
 }
 
-function showTooltip(event, d, type) {
-  const tooltip = d3
+function showTooltipsForMetric(metricKey, event) {
+  const m = metrics.find(m => m.key === metricKey);
+  if (!m) return;
+
+  const maxVals = {
+    revenue: Math.max(indieData.revenue, aaaData.revenue),
+    rating: Math.max(indieData.rating, aaaData.rating),
+    games: Math.max(indieData.games, aaaData.games),
+    positive: Math.max(indieData.positive, aaaData.positive),
+    negative: Math.max(indieData.negative, aaaData.negative),
+    players: Math.max(indieData.players, aaaData.players),
+  };
+
+  const indieVal = indieData[metricKey] || 0;
+  const aaaVal = aaaData[metricKey] || 0;
+  const maxVal = maxVals[metricKey];
+  
+  const indieNorm = maxVal > 0 ? (indieVal / maxVal) * 100 : 0;
+  const aaaNorm = maxVal > 0 ? (aaaVal / maxVal) * 100 : 0;
+
+  let indieFmt, aaaFmt;
+  if (metricKey === "revenue") {
+    indieFmt = `$${(indieVal / 1000000).toFixed(1)}M`;
+    aaaFmt = `$${(aaaVal / 1000000).toFixed(1)}M`;
+  } else if (metricKey === "rating") {
+    indieFmt = indieVal.toFixed(1);
+    aaaFmt = aaaVal.toFixed(1);
+  } else {
+    indieFmt = indieVal.toLocaleString();
+    aaaFmt = aaaVal.toLocaleString();
+  }
+
+  const indieSvg = d3.select("#indie-radar");
+  const aaaSvg = d3.select("#aaa-radar");
+  
+  const indiePt = indieSvg.select(`.radar-point[data-metric="${metricKey}"]`).node();
+  const aaaPt = aaaSvg.select(`.radar-point[data-metric="${metricKey}"]`).node();
+  
+  if (!indiePt || !aaaPt) return;
+  
+  const indieRect = indiePt.getBoundingClientRect();
+  const aaaRect = aaaPt.getBoundingClientRect();
+  
+  const indieX = indieRect.left + indieRect.width / 2 + window.scrollX;
+  const indieY = indieRect.top + indieRect.height / 2 + window.scrollY;
+  
+  const aaaX = aaaRect.left + aaaRect.width / 2 + window.scrollX;
+  const aaaY = aaaRect.top + aaaRect.height / 2 + window.scrollY;
+
+  const indieTooltip = d3
     .select("body")
     .append("div")
-    .attr("class", "tooltip")
+    .attr("class", "tooltip tooltip-indie")
     .style("position", "absolute")
     .style("background", "rgba(14, 18, 32, 0.95)")
     .style("color", "#c7d5e0")
     .style("padding", "12px")
     .style("border-radius", "8px")
-    .style("border", "2px solid #66c0f4")
+    .style("border", "2px solid #ff6b9d")
     .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.5)")
     .style("pointer-events", "none")
     .style("z-index", "1000")
@@ -650,27 +749,48 @@ function showTooltip(event, d, type) {
     .style("font-family", "ui-monospace, 'Courier New', monospace")
     .style("font-weight", "normal");
 
-  let formattedValue;
-  switch (d.key) {
-    case "revenue":
-      formattedValue = `$${(d.rawValue / 1000000).toFixed(1)}M`;
-      break;
-    case "rating":
-      formattedValue = d.rawValue.toFixed(1);
-      break;
-    default:
-      formattedValue = d.rawValue.toLocaleString();
-  }
-
-  tooltip.html(`
-    <strong>${d.name}</strong><br/>
-    ${type.toUpperCase()}: ${formattedValue}<br/>
-    Normalized: ${d.value.toFixed(1)}%
+  indieTooltip.html(`
+    <strong>${m.name}</strong><br/>
+    INDIE: ${indieFmt}<br/>
+    Normalized: ${indieNorm.toFixed(1)}%
   `);
 
-  tooltip
-    .style("left", event.pageX + 10 + "px")
-    .style("top", event.pageY - 10 + "px");
+  const indieOffX = indieRect.left + indieRect.width / 2 > window.innerWidth / 2 ? -120 : 20;
+  const indieOffY = indieRect.top + indieRect.height / 2 > window.innerHeight / 2 ? -80 : 20;
+  
+  indieTooltip
+    .style("left", (indieX + indieOffX) + "px")
+    .style("top", (indieY + indieOffY) + "px");
+
+  const aaaTooltip = d3
+    .select("body")
+    .append("div")
+    .attr("class", "tooltip tooltip-aaa")
+    .style("position", "absolute")
+    .style("background", "rgba(14, 18, 32, 0.95)")
+    .style("color", "#c7d5e0")
+    .style("padding", "12px")
+    .style("border-radius", "8px")
+    .style("border", "2px solid #4ecdc4")
+    .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.5)")
+    .style("pointer-events", "none")
+    .style("z-index", "1000")
+    .style("font-size", "12px")
+    .style("font-family", "ui-monospace, 'Courier New', monospace")
+    .style("font-weight", "normal");
+
+  aaaTooltip.html(`
+    <strong>${m.name}</strong><br/>
+    AAA: ${aaaFmt}<br/>
+    Normalized: ${aaaNorm.toFixed(1)}%
+  `);
+
+  const aaaOffX = aaaRect.left + aaaRect.width / 2 > window.innerWidth / 2 ? -120 : 20;
+  const aaaOffY = aaaRect.top + aaaRect.height / 2 > window.innerHeight / 2 ? -80 : 20;
+  
+  aaaTooltip
+    .style("left", (aaaX + aaaOffX) + "px")
+    .style("top", (aaaY + aaaOffY) + "px");
 }
 
 function hideTooltip() {

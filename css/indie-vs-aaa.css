@@ -93,6 +93,10 @@
   transition: all 0.3s ease;
 }
 
+.stat-bar:not(.dominant) {
+  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+}
+
 .indie-bar {
   background: linear-gradient(90deg, #ff6b9d, #ff8fab);
   border-color: #ff6b9d;
@@ -104,21 +108,54 @@
 }
 
 .stat-bar.dominant {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.6),
-    0 0 60px rgba(255, 255, 255, 0.3);
+  transform: scale(1.12);
+  box-shadow: 0 0 25px rgba(255, 217, 61, 0.9),
+    0 0 50px rgba(255, 217, 61, 0.7),
+    0 0 80px rgba(255, 217, 61, 0.5),
+    inset 0 0 30px rgba(255, 255, 255, 0.3);
   border-color: #ffd93d;
-  animation: dominanceGlow 2s ease-in-out infinite alternate;
+  border-width: 4px;
+  animation: dominancePulse 1.5s ease-in-out infinite;
+  z-index: 10;
 }
 
-@keyframes dominanceGlow {
+.indie-bar.dominant {
+  background: linear-gradient(90deg, #ff6b9d, #ff8fab, #ffd93d, #ff8fab, #ff6b9d);
+  background-size: 200% 100%;
+  animation: dominancePulse 1.5s ease-in-out infinite,
+    gradientShift 3s linear infinite;
+}
+
+.aaa-bar.dominant {
+  background: linear-gradient(90deg, #4ecdc4, #6dd5ed, #66c0f4, #6dd5ed, #4ecdc4);
+  background-size: 200% 100%;
+  animation: dominancePulse 1.5s ease-in-out infinite,
+    gradientShift 3s linear infinite;
+}
+
+@keyframes dominancePulse {
+  0%, 100% {
+    transform: scale(1.12);
+    box-shadow: 0 0 25px rgba(255, 217, 61, 0.9),
+      0 0 50px rgba(255, 217, 61, 0.7),
+      0 0 80px rgba(255, 217, 61, 0.5),
+      inset 0 0 30px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 35px rgba(255, 217, 61, 1),
+      0 0 70px rgba(255, 217, 61, 0.9),
+      0 0 100px rgba(255, 217, 61, 0.7),
+      inset 0 0 40px rgba(255, 255, 255, 0.5);
+  }
+}
+
+@keyframes gradientShift {
   0% {
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.6),
-      0 0 60px rgba(255, 255, 255, 0.3);
+    background-position: 0% 50%;
   }
   100% {
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.8),
-      0 0 80px rgba(255, 255, 255, 0.5);
+    background-position: 200% 50%;
   }
 }
 
@@ -154,6 +191,31 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   z-index: 1;
   transition: all 0.3s ease;
+}
+
+.stat-bar.dominant .stat-number {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: #ffd93d;
+  text-shadow: 0 0 10px rgba(255, 217, 61, 0.8),
+    0 0 20px rgba(255, 217, 61, 0.6),
+    2px 2px 6px rgba(0, 0, 0, 1);
+  animation: numberPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes numberPulse {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 217, 61, 0.8),
+      0 0 20px rgba(255, 217, 61, 0.6),
+      2px 2px 6px rgba(0, 0, 0, 1);
+  }
+  50% {
+    transform: scale(1.05);
+    text-shadow: 0 0 15px rgba(255, 217, 61, 1),
+      0 0 30px rgba(255, 217, 61, 0.8),
+      2px 2px 8px rgba(0, 0, 0, 1);
+  }
 }
 
 /* Radar charts */
@@ -318,7 +380,7 @@ svg:hover {
 }
 
 .radar-label {
-  font-size: 16px;
+  font-size: 20px;
   fill: #ffffff;
   text-anchor: middle;
   dominant-baseline: middle;
@@ -329,7 +391,7 @@ svg:hover {
 }
 
 .radar-label:hover {
-  font-size: 18px;
+  font-size: 24px;
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }
 
