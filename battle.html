@@ -149,20 +149,33 @@
     </div>
 
     <div class="explanation-box">
-      <div style="color: #ffd700; margin-bottom: 6px; font-size: 0.65rem;">
+      <div style="color: #ffd700; margin-bottom: 6px; font-size: 0.65rem">
         🎮 HOW TO READ THIS
       </div>
-      <div style="margin-bottom: 6px;">
-        <strong style="color: #ff6b9d;">Pink Strike Cards:</strong> Studio games at different price points. Each card's damage = number of studio games in that price range.
+      <div style="margin-bottom: 6px">
+        <strong style="color: #ff6b9d">Pink Strike Cards:</strong> Studio games
+        at different price points. Each card's damage = number of studio games
+        in that price range.
       </div>
-      <div style="margin-bottom: 6px;">
-        <strong style="color: #00ff88;">Green Defend Card:</strong> All indie games combined. Block strength = total indie games.
+      <div style="margin-bottom: 6px">
+        <strong style="color: #00ff88">Green Defend Card:</strong> All indie
+        games combined. Block strength = total indie games.
       </div>
-      <div style="margin-bottom: 6px;">
-        <strong style="color: #ffd700;">The Peak (⛰️):</strong> Arrow points to the price range with the MOST studio games.
+      <div style="margin-bottom: 6px">
+        <strong style="color: #ffd700">The Peak (⛰️):</strong> Arrow points to
+        the price range with the MOST studio games.
       </div>
-      <div style="color: #c7d5e0; font-size: 0.5rem; border-top: 1px solid #66c0f4; padding-top: 6px; margin-top: 6px;">
-        <strong>Insight:</strong> This shows which price ranges dominate for studio games vs. the collective strength of all indie games.
+      <div
+        style="
+          color: #c7d5e0;
+          font-size: 0.5rem;
+          border-top: 1px solid #66c0f4;
+          padding-top: 6px;
+          margin-top: 6px;
+        "
+      >
+        <strong>Insight:</strong> This shows which price ranges dominate for
+        studio games vs. the collective strength of all indie games.
       </div>
     </div>
 
@@ -227,7 +240,7 @@
       ];
 
       // Load and process data
-      d3.csv("../data/games.csv")
+      d3.csv("data/games.csv")
         .then((loadedData) => {
           console.log("✅ Data loaded:", loadedData.length, "rows");
           data = loadedData;
@@ -245,12 +258,18 @@
 
           calculateValues();
           drawVisualization();
+
+          // Clear any error messages once data loads successfully
+          const infoEl = document.getElementById("info");
+          if (infoEl && infoEl.innerHTML.includes("DATA LOADING ERROR")) {
+            infoEl.innerHTML = "";
+          }
         })
         .catch((error) => {
           console.error("❌ Error loading CSV:", error);
           document.getElementById("info").innerHTML = `
         <div style="color: #ff6b9d;">⚠️ DATA LOADING ERROR</div>
-        <div style="font-size: 0.5rem; margin-top: 5px;">Path: ../data/games.csv</div>
+        <div style="font-size: 0.5rem; margin-top: 5px;">Path: data/games.csv</div>
         <div style="font-size: 0.5rem;">${error.message}</div>
     `;
           drawVisualization();
@@ -295,7 +314,9 @@
           .attr("class", "subtitle-text")
           .attr("x", 500)
           .attr("y", 50)
-          .text("Studio games split by price range fight indie's combined strength");
+          .text(
+            "Studio games split by price range fight indie's combined strength"
+          );
 
         // Peak label
         svg
@@ -316,7 +337,7 @@
         // Arrow pointing to peak
         if (maxCard && maxCard.gameCount > 0) {
           const arrowX = maxCard.x;
-          
+
           // Add arrowhead marker definition
           svg
             .append("defs")
@@ -422,7 +443,9 @@
                 d3.select("#info").html(`
                       <div style="color: #8f98a0;">💀 DRAINED CARD</div>
                       <div>This card has been used!</div>
-                      <div style="margin-top: 5px; font-size: 0.5rem;">Already dealt ${d.damage || 0} damage</div>
+                      <div style="margin-top: 5px; font-size: 0.5rem;">Already dealt ${
+                        d.damage || 0
+                      } damage</div>
                   `);
               } else {
                 d3.select("#info").html(`
@@ -525,7 +548,7 @@
       function attackDefend(strikeCard) {
         const damage = strikeCard.damage || 0;
         defendHealth -= damage;
-        
+
         // Mark the strike card as used
         strikeCard.used = true;
 
@@ -540,11 +563,11 @@
           .text(Math.max(0, defendHealth));
 
         // Make the strike card look drained
-        const cardGroup = svg.selectAll(".card-group")
-          .filter(d => d.id === strikeCard.id);
-        
-        cardGroup.select("rect")
-          .classed("drained", true);
+        const cardGroup = svg
+          .selectAll(".card-group")
+          .filter((d) => d.id === strikeCard.id);
+
+        cardGroup.select("rect").classed("drained", true);
 
         // Add "DRAINED" text overlay
         cardGroup
