@@ -126,14 +126,18 @@
             background:#121629;
             box-shadow:0 0 0 1px #23324d inset;
         }
-
-        .hint {
-            position:absolute;
-            left:10px;
-            bottom:-10px;
-            color:var(--muted);
-            font-size:12px;
+        .title-hint {
+            text-align:center;
+            color: var(--muted);
+            font-size:14px;
+            margin-top:-10px;
+            margin-bottom:18px;
+            position:static;
+            text-shadow:
+                    0 0 8px rgba(255,255,255,0.4),
+                    0 0 16px rgba(255,210,74,0.4);
         }
+
         .legend {
             position:absolute;
             right:10px;
@@ -207,7 +211,7 @@
             pointer-events:none;
         }
         .board-title {
-            font-size:9px;
+            font-size:11px;
             padding:2px 3px 4px;
             margin-bottom:4px;
             color:#f5f5ff;
@@ -248,36 +252,51 @@
 
         .rank-row {
             display:flex;
-            align-items:baseline;
+            align-items:center;
             justify-content:space-between;
-            padding:2px 4px;
+            padding:4px 6px;
             border-radius:4px;
             transition:background .18s ease, box-shadow .18s ease, transform .12s ease;
+            font-size:11px;
         }
+
         .rank-row:nth-child(odd) {
-            background:rgba(255,255,255,0.02);
+            background:rgba(255,255,255,0.03);
         }
+
         .rank-row.flash {
-            background:rgba(255,255,255,0.09);
+            background:rgba(255,255,255,0.12);
             box-shadow:0 0 0 1px rgba(255,255,255,.9), 0 0 12px var(--pac);
             transform:translateY(-1px);
         }
-        .rank-main {
-            display:flex;
-            align-items:baseline;
-            gap:4px;
-            min-width:0;
-        }
+
         .rank-index {
             color:#fafbff;
-            font-size:8px;
+            font-size:11px;
         }
+
         .rank-name {
+            font-size:11px;
+            font-weight:600;
             max-width:140px;
             overflow:hidden;
             text-overflow:ellipsis;
             white-space:nowrap;
         }
+
+        .rank-rating,
+        .rank-reviews,
+        .rank-price {
+            font-size:12px;
+        }
+
+        .rank-main {
+            display:flex;
+            align-items:baseline;
+            gap:6px;
+            min-width:0;
+        }
+
         .rank-meta {
             display:flex;
             align-items:baseline;
@@ -325,10 +344,15 @@
 <body>
 <div id="wrap">
     <h1 class="main-title pix">Discovering Value: Steam Price vs Review Trends</h1>
+    <div class="title-hint" style="color:#ffd24a; font-size:16px; font-weight:700;">
+        Use Arrow Keys or WASD to start and move · Eat bubbles to rank games and see average ratings!
+    </div>
+
+
     <div class="frame">
         <div id="endMessage" class="end-message pix">Full Dataset Explored!</div>
         <div class="hud">
-            <span class="pix">TOTAL</span>
+            <span class="pix">NUMBER OF GAMES</span>
             <span id="scoreTotal" class="badge">0</span>
 
             <span class="pix">ACTION</span>
@@ -352,7 +376,8 @@
             </div>
         </div>
 
-        <div class="hint">Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to score & rank</div>
+<!--        <div class="hint">Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to score & rank</div>-->
+
         <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
 
         <div class="row">
@@ -365,15 +390,17 @@
                     <div class="board-title pix">TOP RATED (EATEN)</div>
                     <div class="board-body" id="boardQuality"></div>
                 </div>
-                <div class="board" id="boardValueBox">
-                    <div class="board-title pix">BEST VALUE (EATEN)</div>
-                    <div class="board-body" id="boardValue"></div>
+                <div class="board" id="trendBox">
+                    <div class="board-title pix">AVERAGE RATING</div>
+                    <svg id="trendChart" width="280" height="320"></svg>
                 </div>
+
             </div>
         </div>
 
         <div id="tooltip" class="tooltip"></div>
         <div id="rankTooltip" class="rank-tooltip"></div>
+        <div id="trendTooltip" class="rank-tooltip"></div>
     </div>
 </div>
 
@@ -391,7 +418,6 @@
         const q = sel => document.querySelector(sel);
 
         const boardQualityEl = q('#boardQuality');
-        const boardValueEl = q('#boardValue');
 
         function escapeHtml(str){
             return String(str)
@@ -479,7 +505,7 @@
             y: innerH/2|0,
             r: 12,
             dir: 'right',
-            speed: 2.6,
+            speed: 1,
             mouth: 0.2,
             phase: 0
         };
@@ -503,14 +529,6 @@
 
         function updateRanking(){
             const eaten = [...eatenBy.Action, ...eatenBy.Indie];
-
-            if (!eaten.length){
-                boardQualityEl.innerHTML =
-                    "<div class='board-empty pix'>Eat some bubbles to fill this ranking!<br>High-rating games you eat will appear here.</div>";
-                boardValueEl.innerHTML =
-                    "<div class='board-empty pix'>Cheap + highly rated games you eat<br>will show up as BEST VALUE here.</div>";
-                return;
-            }
 
             const byQuality = [...eaten]
                 .sort((a,b) =>
@@ -563,7 +581,6 @@
             }).join("");
 
             boardQualityEl.innerHTML = rowsQuality;
-            boardValueEl.innerHTML = rowsValue;
             // --- Ranking hover tooltip ---
             const rankTooltip = document.getElementById('rankTooltip');
 
@@ -594,6 +611,145 @@
                 });
             });
         }
+
+
+        //--------------------------------------------------
+// Rating Progression Trend Line
+//--------------------------------------------------
+        const ratingSvg = d3.select("#trendChart");
+        const rW = 280, rH = 300;
+        const rMargin = {l:35, r:10, t:15, b:30};
+        const rInnerW = rW - rMargin.l - rMargin.r;
+        const rInnerH = rH - rMargin.t - rMargin.b;
+
+// container
+        ratingSvg.append("g")
+            .attr("id", "ratingPlot")
+            .attr("transform", `translate(${rMargin.l},${rMargin.t})`);
+
+        function updateRatingProgression() {
+            const plot = ratingSvg.select("#ratingPlot");
+            plot.selectAll("*").remove();
+
+            const eatenAction = eatenBy.Action;
+            const eatenIndie  = eatenBy.Indie;
+
+            if (eatenAction.length === 0 && eatenIndie.length === 0) return;
+
+            // ---- Compute progression for each category ----
+            function computeProgression(arr) {
+                const prog = [];
+                let sum = 0;
+                arr.forEach((g, i) => {
+                    sum += g.rating;
+                    prog.push({
+                        idx: i + 1,
+                        avgRating: sum / (i + 1)
+                    });
+                });
+                return prog;
+            }
+
+            const progAction = computeProgression(eatenAction);
+            const progIndie  = computeProgression(eatenIndie);
+
+            // ---- Scales ----
+            const maxLen = Math.max(progAction.length, progIndie.length);
+
+            const x = d3.scaleLinear().domain([1, maxLen]).range([0, rInnerW]);
+            const y = d3.scaleLinear().domain([0, 100]).range([rInnerH, 0]);
+
+            // ---- Axes ----
+            plot.append("g")
+                .attr("transform", `translate(0,${rInnerH})`)
+                .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0))
+                .call(g => g.selectAll("text").attr("fill", "#b8c4e6"))
+                .call(g => g.selectAll("path,line").attr("stroke", "#2a3758"));
+
+            plot.append("g")
+                .call(d3.axisLeft(y).ticks(5).tickSizeOuter(0))
+                .call(g => g.selectAll("text").attr("fill", "#b8c4e6"))
+                .call(g => g.selectAll("path,line").attr("stroke", "#2a3758"));
+
+            const tooltipT = document.getElementById("trendTooltip");
+
+            // ---- Line generator ----
+            const line = d3.line()
+                .x(d => x(d.idx))
+                .y(d => y(d.avgRating))
+                .curve(d3.curveMonotoneX);
+
+            //------------------------------------------
+            // Draw Action line (pink)
+            //------------------------------------------
+            if (progAction.length > 0) {
+                plot.append("path")
+                    .datum(progAction)
+                    .attr("fill", "none")
+                    .attr("stroke", "var(--action)")
+                    .attr("stroke-width", 2)
+                    .attr("d", line);
+
+                const lastA = progAction[progAction.length - 1];
+
+                plot.append("circle")
+                    .attr("cx", x(lastA.idx))
+                    .attr("cy", y(lastA.avgRating))
+                    .attr("r", 5)
+                    .attr("fill", "var(--action)")
+                    .attr("stroke", "#ffd6ef")
+                    .attr("stroke-width", 1.5)
+                    .style("filter", "url(#glowPink)")
+                    .on("mousemove", (ev) => {
+                        tooltipT.innerHTML = `<b style="color:var(--action)">Action</b><br>${lastA.avgRating.toFixed(1)}%`;
+                        tooltipT.style.left = ev.pageX + 14 + "px";
+                        tooltipT.style.top = ev.pageY + 14 + "px";
+                        tooltipT.style.opacity = 1;
+                        tooltipT.style.transform = "translateY(0)";
+                    })
+                    .on("mouseleave", () => {
+                        tooltipT.style.opacity = 0;
+                        tooltipT.style.transform = "translateY(-6px)";
+                    });
+            }
+
+            //------------------------------------------
+            // Draw Indie line (green)
+            //------------------------------------------
+            if (progIndie.length > 0) {
+                plot.append("path")
+                    .datum(progIndie)
+                    .attr("fill", "none")
+                    .attr("stroke", "var(--indie)")
+                    .attr("stroke-width", 2)
+                    .attr("d", line);
+
+                const lastI = progIndie[progIndie.length - 1];
+
+                plot.append("circle")
+                    .attr("cx", x(lastI.idx))
+                    .attr("cy", y(lastI.avgRating))
+                    .attr("r", 5)
+                    .attr("fill", "var(--indie)")
+                    .attr("stroke", "#d6ffee")
+                    .attr("stroke-width", 1.5)
+                    .style("filter", "url(#glowMint)")
+                    .on("mousemove", (ev) => {
+                        tooltipT.innerHTML = `<b style="color:var(--indie)">Indie</b><br>${lastI.avgRating.toFixed(1)}%`;
+                        tooltipT.style.left = ev.pageX + 14 + "px";
+                        tooltipT.style.top = ev.pageY + 14 + "px";
+                        tooltipT.style.opacity = 1;
+                        tooltipT.style.transform = "translateY(0)";
+                    })
+                    .on("mouseleave", () => {
+                        tooltipT.style.opacity = 0;
+                        tooltipT.style.transform = "translateY(-6px)";
+                    });
+            }
+        }
+
+
+
 
         function flashRanking(game){
             const key = encodeURIComponent(game.name);
@@ -647,6 +803,7 @@
         function loadData(rows){
             // --- Parse & clean rows ---
             const items = [];
+
             for(const d of rows){
 
                 // --- Parse genres ---
@@ -668,6 +825,7 @@
                 const reviews = +d.total_reviews || 0;
                 if (reviews <= 0) continue;
                 if (reviews <= 10) continue;
+
 
 
                 // parse price
@@ -728,7 +886,7 @@
                 .attr('text-anchor','start')
                 .attr('fill','#cdd8f6')
                 .attr('font-size',10)
-                .text('POSITIVE %');
+                .text('RATING %');
 
             // --- Nodes mapped to scatter positions ---
             const nodes = data.map(d => ({
@@ -793,6 +951,7 @@
                 paused = false;
                 q('#pauseIcon').textContent = '⏸';
                 updateRanking();
+                updateRatingProgression();
             }
 
             q('#pause').onclick = () => {
@@ -849,6 +1008,7 @@
                         burst(cx, cy, d.cat);
                         pacFlash();
                         updateRanking();
+                        updateRatingProgression();
                         flashRanking(d);
                         // --- Check if all pellets eaten ---
                         if (score.total >= data.length) {
@@ -870,6 +1030,7 @@
 
             // Initialize rankings once
             updateRanking();
+            updateRatingProgression();
         }
 
         // === Effects (bursts & pac) ===
