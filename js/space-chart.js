@@ -152,7 +152,7 @@ class SpaceChart {
       .append("svg")
       .attr("width", spaceWidth + spaceMargin.left + spaceMargin.right)
       .attr("height", spaceHeight)
-      .style("background", "#0e1321"); // maybe do an actual space image in the future
+      .style("background", "#0e1321");
 
     vis.g = vis.svg.append("g");
 
@@ -275,7 +275,14 @@ class SpaceChart {
       .attr("paint-order", "stroke")
       .text((d) => d);
 
-    const arrowImageX = spaceWidth - 150 - spaceMargin.right - 40;
+    const legendBoxWidth = 170;
+    const legendBoxPadding = 10;
+    const rightMargin = 150;
+    
+    const svgTotalWidth = spaceWidth + spaceMargin.left + spaceMargin.right;
+    const contentRightEdge = spaceWidth + spaceMargin.left;
+    const maxRightEdge = contentRightEdge - rightMargin;
+    const arrowImageX = maxRightEdge - legendBoxWidth + legendBoxPadding;
     const arrowImageY = (spaceHeight / 4) * 3;
     
     vis.arrowLegendGroup = vis.svg
@@ -284,10 +291,10 @@ class SpaceChart {
     
     vis.arrowLegendGroup
       .append("rect")
-      .attr("x", -10)
-      .attr("y", -10)
-      .attr("width", 170)
-      .attr("height", 170)
+      .attr("x", -legendBoxPadding)
+      .attr("y", -legendBoxPadding)
+      .attr("width", legendBoxWidth)
+      .attr("height", legendBoxWidth)
       .attr("rx", 10)
       .attr("ry", 10)
       .attr("fill", "rgba(0,0,0,0.7)");

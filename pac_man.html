@@ -940,7 +940,7 @@
           });
         }
 
-        // === Mouse tracking for controls ===
+        // === Keyboard ===
         let isMouseOverViz = false;
         const frame = q(".frame");
         frame.addEventListener("mouseenter", () => {
@@ -950,7 +950,6 @@
           isMouseOverViz = false;
         });
 
-        // === Keyboard ===
         const dirs = {
           ArrowLeft: "left",
           ArrowRight: "right",
@@ -966,26 +965,25 @@
           S: "down",
         };
         addEventListener("keydown", (e) => {
+          const scrollKeys = [
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            "w",
+            "W",
+            "s",
+            "S",
+            "a",
+            "A",
+            "d",
+            "D",
+          ];
+          if (scrollKeys.includes(e.key)) {
+            e.preventDefault();
+          }
           const nd = dirs[e.key];
           if (nd && isMouseOverViz) {
-            if (
-              [
-                "ArrowUp",
-                "ArrowDown",
-                "ArrowLeft",
-                "ArrowRight",
-                "w",
-                "W",
-                "s",
-                "S",
-                "a",
-                "A",
-                "d",
-                "D",
-              ].includes(e.key)
-            ) {
-              e.preventDefault();
-            }
             pac.dir = nd;
             started = true;
           }
