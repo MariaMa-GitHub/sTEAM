@@ -253,8 +253,6 @@
             text-transform:uppercase;
         }
 
-
-
         .rank-row {
             display:flex;
             align-items:center;
@@ -352,14 +350,69 @@
         .rank-rating { color:#f8f9ff; }
         .rank-reviews { min-width:32px; text-align:right; }
         .rank-price { min-width:40px; text-align:right; }
+        #game-wrap {
+            position: relative;
+            width: 640px;
+            height: 720px;
+        }
+
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(2px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: opacity .4s ease;
+        }
+
+        .start-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 40px 50px;
+            border-radius: 12px;
+            border: 2px solid #ffdb6a;
+            background: rgba(0,0,0,0.45);
+            box-shadow:
+                    0 0 20px rgba(255,210,74,0.5),
+                    0 0 40px rgba(255,210,74,0.2);
+            animation: floaty 2s infinite ease-in-out;
+        }
+
+        .start-text {
+            font-size: 20px;
+            color: #ffe89a;
+            text-shadow:
+                    0 0 8px rgba(255,255,200,0.7),
+                    0 0 18px rgba(255,210,74,1);
+        }
+
+        .start-icon {
+            font-size: 50px;
+            margin-top: -8px;
+            color: #ffdb6a;
+            text-shadow:
+                    0 0 8px rgba(255,255,200,0.9),
+                    0 0 22px rgba(255,210,74,1);
+        }
+
+        @keyframes floaty {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
 
     </style>
 </head>
 <body>
+
 <div id="wrap">
     <h1 class="main-title pix">Discovering Value: Steam Price vs Review Trends</h1>
     <div class="title-hint">
-        Use Arrow Keys or WASD to start and move · Eat bubbles to rank games and see average ratings!
+        Use Arrow Keys or WASD to move · Eat bubbles to rank games and see average ratings!
     </div>
 
 
@@ -397,9 +450,15 @@
         <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
 
         <div class="row">
-            <!-- Left: Bubble plot (price vs positive %) -->
-            <svg id="game" viewBox="0 0 640 720"></svg>
+            <div id="game-wrap">
+                <div id="start-overlay">
+                    <div class="start-inner">
+                        <div class="start-icon pix">▶</div>
+                    </div>
+                </div>
 
+                <svg id="game" viewBox="0 0 640 720"></svg>
+            </div>
             <!-- Right: RPG-style dual leaderboard -->
             <div id="sidePanel">
                 <div class="board" id="boardQualityBox">
@@ -1117,6 +1176,17 @@
 
         // === Minimal runtime self-tests (console) ===
         console.assert(document.querySelector('#game'), '[Self-test] scatter svg exists');
+
+        // === Press Start Overlay ===
+        const overlay = document.getElementById("start-overlay");
+
+        overlay.addEventListener("click", () => {
+            overlay.style.opacity = 0;
+            setTimeout(() => {
+                overlay.remove();
+                started = true;
+            }, 400);
+        });
 
     })();
 </script>
