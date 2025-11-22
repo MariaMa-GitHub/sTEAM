@@ -137,12 +137,16 @@
 
       #chapter-description .controls-text {
         color: #8f98a0;
-        font-weight: 600;
-        font-size: 0.9em;
-        display: block;
+        font-weight: 700;
+        font-size: 0.95em;
+        display: inline-block;
         margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid rgba(102, 192, 244, 0.1);
+        padding: 0.4rem 0.8rem;
+        border-left: 2px solid rgba(102, 192, 244, 0.3);
+        background: linear-gradient(90deg, rgba(102, 192, 244, 0.05) 0%, transparent 100%);
+        border-radius: 0 4px 4px 0;
+        font-style: italic;
+        opacity: 0.85;
       }
 
       .chapter-header-nav {
@@ -251,11 +255,17 @@
       }
 
       .chapter-header .controls-text {
-        color: #7a8ca8;
-        font-weight: 600;
+        color: #8f98a0;
+        font-weight: 700;
         font-size: 0.95em;
         margin-top: 0.5rem;
-        display: block;
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-left: 2px solid rgba(102, 192, 244, 0.3);
+        background: linear-gradient(90deg, rgba(102, 192, 244, 0.05) 0%, transparent 100%);
+        border-radius: 0 4px 4px 0;
+        font-style: italic;
+        opacity: 0.85;
       }
 
       .action-button {
@@ -786,7 +796,7 @@
           <div class="chapter-header"></div>
           <div class="viz-content">
             <div class="viz-panel">
-              <iframe src="space-chart.html" title="Space Chart"></iframe>
+              <iframe src="space-chart.html" title="Space Chart" style="height: 700px;"></iframe>
             </div>
           </div>
         </div>
@@ -794,7 +804,7 @@
     </div>
 
     <div class="footer">
-      <p>Steam Games Data Visualization Project | Prototype V2 Submission</p>
+      <p>Steam Games Data Visualization Project</p>
       <p style="margin-top: 0.5rem; font-size: 0.8rem">
         Team Members: Iris, Joshua, Xiran, Amanda, Maria
       </p>
@@ -824,7 +834,7 @@
         3: {
           title: "CHAPTER 3: INDIE VS AAA",
           description:
-            'The answer: which is more popular? Compare indie and AAA games across revenue, ratings, player counts, and reviews. Each axis reveals a different dimension of the battle. Filter by year to see how the landscape shifts over time. <span class="controls-text">Controls: Hover over metric icons. Use year buttons to filter.</span>',
+            'The answer: which is more popular? Compare indie and AAA games across revenue, ratings, player counts, and reviews. Each axis reveals a different dimension of the battle. Filter by year to see how the landscape shifts over time. <span class="controls-text">Controls: Hover over data points or metric icons to compare. Use year buttons to filter.</span>',
         },
         4: {
           title: "CHAPTER 4: THE SOCIAL LAYER",

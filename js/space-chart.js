@@ -275,13 +275,30 @@ class SpaceChart {
       .attr("paint-order", "stroke")
       .text((d) => d);
 
-    vis.tooltipImage = vis.svg
+    const arrowImageX = spaceWidth - 150 - spaceMargin.right - 40;
+    const arrowImageY = (spaceHeight / 4) * 3;
+    
+    vis.arrowLegendGroup = vis.svg
+      .append("g")
+      .attr("transform", `translate(${arrowImageX}, ${arrowImageY})`);
+    
+    vis.arrowLegendGroup
+      .append("rect")
+      .attr("x", -10)
+      .attr("y", -10)
+      .attr("width", 170)
+      .attr("height", 170)
+      .attr("rx", 10)
+      .attr("ry", 10)
+      .attr("fill", "rgba(0,0,0,0.7)");
+    
+    vis.tooltipImage = vis.arrowLegendGroup
       .append("image")
       .attr("href", "assets/arrowkeys.png")
-      .attr("width", 200)
-      .attr("height", 200)
-      .attr("x", (spaceWidth / 7) * 6)
-      .attr("y", (spaceHeight / 4) * 3);
+      .attr("width", 150)
+      .attr("height", 150)
+      .attr("x", 0)
+      .attr("y", 0);
 
     vis.tooltipGroup = vis.svg
       .append("g")
@@ -318,53 +335,51 @@ class SpaceChart {
 
     legend
       .append("rect")
-      .attr("x", -10) // add a little padding
+      .attr("x", -10)
       .attr("y", -30)
-      .attr("width", 320)
-      .attr("height", 220)
-      .attr("rx", 10) // rounded corners
+      .attr("width", 280)
+      .attr("height", 190)
+      .attr("rx", 10)
       .attr("ry", 10)
-      .attr("fill", "rgba(0,0,0,0.7)"); // semi-transparent dark background
+      .attr("fill", "rgba(0,0,0,0.7)");
 
-    // --- Color 1 ---
     legend
       .append("rect")
       .attr("x", 0)
       .attr("y", 0)
-      .attr("width", "2em")
-      .attr("height", "2em")
-      .attr("fill", `hsl(320, 94%, 57%)`); // replace with your actual color
+      .attr("width", "1.8em")
+      .attr("height", "1.8em")
+      .attr("fill", `hsl(320, 94%, 57%)`);
 
     legend
       .append("text")
-      .attr("x", 40)
-      .attr("y", 30)
-      .attr("font-size", "4em")
+      .attr("x", 35)
+      .attr("y", 28)
+      .attr("font-size", "3.5em")
       .attr("fill", "#fff")
       .text("AAA");
 
-    // --- Color 2 ---
     legend
       .append("rect")
       .attr("x", 0)
-      .attr("y", 70)
-      .attr("width", "2em")
-      .attr("height", "2em")
-      .attr("fill", `hsl(163, 97%, 41%)`); // replace with your actual color
+      .attr("y", 60)
+      .attr("width", "1.8em")
+      .attr("height", "1.8em")
+      .attr("fill", `hsl(163, 97%, 41%)`);
 
     legend
       .append("text")
-      .attr("x", 40)
-      .attr("y", 104)
-      .attr("font-size", "4em")
+      .attr("x", 35)
+      .attr("y", 90)
+      .attr("font-size", "3.5em")
       .attr("fill", "#fff")
       .text("Indie");
 
     legend
       .append("text")
       .attr("x", 0)
-      .attr("y", 144)
-      .attr("font-size", "1.5em")
+      .attr("y", 125)
+      .attr("font-size", "1.3em")
       .attr("fill", "#fff")
       .text("More opaque = more popular");
 
