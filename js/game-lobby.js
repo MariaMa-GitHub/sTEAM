@@ -16,19 +16,31 @@ let svg = d3.select("#game-lobby").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 svg.append("text")
-    .text("Choose your team! (hover)")
+    .attr("class", "heading")
+    .text("Pick your side! (click on the sides that say '(Choose me!)' to explore more)")
     .attr("transform", "translate(" + (width / 2) + ", 0)")
     .attr("text-anchor", "middle")
     .attr("fill", "#c7d5e0")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "14px");
 
-let leftTeam = svg.append("g")
-    .attr("class", "left-team")
+// Add sort option
+svg.append("text")
+    .attr("class", "sort")
+    .attr("x", width - 50)
+    .attr("y", 0)
+    .text("Sort")
+    .attr("fill", "#66c0f4")
+    .attr("font-family", "ui-monospace, 'Courier New', monospace")
+    .attr("font-size", "14px")
+    .attr("cursor", "pointer");
+
+let leftSide = svg.append("g")
+    .attr("class", "left-side")
     .attr("transform", "translate(0, 50)");
 
-leftTeam.append("text")
-    .attr("class", "left-team-text")
+leftSide.append("text")
+    .attr("class", "left-side-text")
     .text("Multiplayer (Choose me!)")
     .attr("x", width / 4)
     .attr("text-anchor", "middle")
@@ -36,18 +48,30 @@ leftTeam.append("text")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "14px");
 
-let rightTeam = svg.append("g")
-    .attr("class", "right-team")
+let rightSide = svg.append("g")
+    .attr("class", "right-side")
     .attr("transform", "translate(0, 50)");
 
-rightTeam.append("text")
-    .attr("class", "right-team-text")
+rightSide.append("text")
+    .attr("class", "right-side-text")
     .text("Non-multiplayer")
     .attr("x", 3 * width / 4)
     .attr("text-anchor", "middle")
     .attr("fill", "#c7d5e0")
     .attr("font-family", "ui-monospace, 'Courier New', monospace")
     .attr("font-size", "14px");
+
+// Add back option to go back to previous selection
+    svg.append("text")
+        .attr("class", "back")
+        .attr("x", width - 50)
+        .attr("y", height - 50)
+        .text("Back")
+        .attr("fill", "#66c0f4")
+        .attr("font-family", "ui-monospace, 'Courier New', monospace")
+        .attr("font-size", "14px")
+        .attr("cursor", "pointer")
+        .style("opacity", 0);
 
 // Legend
 let indieLegend = svg.append("g")
@@ -99,7 +123,7 @@ Object.defineProperty(window, 'data', {
 	get: function() { return _data; },
 	set: function(value) {
 		_data = value;
-		updateVisualization(0);
+		updateVisualization(0, 0, 0);
 	}
 });
 
@@ -112,11 +136,28 @@ function loadData() {
 
 loadData();
 
-function updateVisualization(selection) {
+function updateVisualization(selection1, selection2, sortIndex) {
     let multiplayerData = data.filter(d => d.categories.includes('Multi-player'));
     let nonmultiplayerData = data.filter(d => (d.categories.includes('Multi-player')) == false);
     let cooperativeData = multiplayerData.filter(d => d.categories.includes('Co-op'));
     let competitiveData = multiplayerData.filter(d => d.categories.includes('PvP'));
+    let onlinecoopData = cooperativeData.filter(d => d.categories.includes('Online Co-op'));
+    let couchcoopData = cooperativeData.filter(d => d.categories.includes('Shared/Split Screen Co-op'));
+    let onlinepvpData = competitiveData.filter(d => d.categories.includes('Online PvP'));
+    let couchpvpData = competitiveData.filter(d => d.categories.includes('Shared/Split Screen PvP'));
+
+    let sortFunctions = [compare1, compare2];
+
+    if (sortIndex > 0) {
+        multiplayerData.sort(sortFunctions[sortIndex - 1])
+        nonmultiplayerData.sort(sortFunctions[sortIndex - 1])
+        cooperativeData.sort(sortFunctions[sortIndex - 1])
+        competitiveData.sort(sortFunctions[sortIndex - 1])
+        onlinecoopData.sort(sortFunctions[sortIndex - 1])
+        couchcoopData.sort(sortFunctions[sortIndex - 1])
+        onlinepvpData.sort(sortFunctions[sortIndex - 1])
+        couchpvpData.sort(sortFunctions[sortIndex - 1])
+    }
 
     let numIndieMultiplayer = 0;
     let numNonindieMultiplayer = 0;
@@ -126,6 +167,14 @@ function updateVisualization(selection) {
     let numNonindieCooperative = 0;
     let numIndieCompetitive = 0;
     let numNonindieCompetitive = 0;
+    let numIndieOnlinecoop = 0;
+    let numNonindieOnlinecoop = 0;
+    let numIndieCouchcoop = 0;
+    let numNonindieCouchcoop = 0;
+    let numIndieOnlinepvp = 0;
+    let numNonindieOnlinepvp = 0;
+    let numIndieCouchpvp = 0;
+    let numNonindieCouchpvp = 0;
 
     // Aggregation
     for (let i = 0; i < multiplayerData.length; i++) {
@@ -163,120 +212,115 @@ function updateVisualization(selection) {
             numNonindieCompetitive++;
         }
     }
-
-    let selectionsIndieLeft = [numIndieMultiplayer, numIndieCooperative];
-    let selectionsNonindieLeft = [numNonindieMultiplayer, numNonindieCooperative];
-    let selectionsIndieRight = [numIndieNonmultiplayer, numIndieCompetitive];
-    let selectionsNonindieRight = [numNonindieNonmultiplayer, numNonindieCompetitive];
-
-    if (selection == 0) {
-        let leftPlayer = leftTeam.selectAll("image")
-            .data(multiplayerData);
-
-        // Enter
-        leftPlayer.enter().append("image")
-            .attr("class", "left-player")
-            .merge(leftPlayer)
-            .attr("x", (d, index) => (index % 30) * width / 60 - 15)
-            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-            .attr("width", 16)
-            .attr("height", 16)
-            .attr("xlink:href", d => {
-                if (d.genres.includes('Indie'))
-                    return icons[0]
-                else
-                    return icons[1]
-            });
-
-        leftPlayer.exit().remove();
-
-        let rightPlayer = rightTeam.selectAll("image")
-            .data(nonmultiplayerData);
-
-        // Enter
-        rightPlayer.enter().append("image")
-            .attr("class", "right-player")
-            .merge(rightPlayer)
-            .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
-            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-            .attr("width", 16)
-            .attr("height", 16)
-            .attr("xlink:href", d => {
-                if (d.genres.includes('Indie'))
-                    return icons[0]
-                else
-                    return icons[1]
-            });
-
-        rightPlayer.exit().remove();
+    for (let i = 0; i < onlinecoopData.length; i++) {
+        if (onlinecoopData[i].genres.includes('Indie')) {
+            numIndieOnlinecoop++;
+        }
+        else {
+            numNonindieOnlinecoop++;
+        }
     }
-    else {
-        leftPlayer = leftTeam.selectAll("image")
-            .data(cooperativeData);
-
-        // Enter
-        leftPlayer.enter().append("image")
-            .attr("class", "left-player")
-            .merge(leftPlayer)
-            .attr("x", (d, index) => (index % 30) * width / 60 - 15)
-            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-            .attr("width", 16)
-            .attr("height", 16)
-            .attr("xlink:href", d => {
-                if (d.genres.includes('Indie'))
-                    return icons[0]
-                else
-                    return icons[1]
-            });
-
-        leftPlayer.exit().remove();
-
-        let rightPlayer = rightTeam.selectAll("image")
-            .data(competitiveData);
-
-        // Enter
-        rightPlayer.enter().append("image")
-            .attr("class", "right-player")
-            .merge(rightPlayer)
-            .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
-            .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top)
-            .attr("width", 16)
-            .attr("height", 16)
-            .attr("xlink:href", d => {
-                if (d.genres.includes('Indie'))
-                    return icons[0]
-                else
-                    return icons[1]
-            });
-
-        rightPlayer.exit().remove();
+    for (let i = 0; i < onlinepvpData.length; i++) {
+        if (onlinepvpData[i].genres.includes('Indie')) {
+            numIndieOnlinepvp++;
+        }
+        else {
+            numNonindieOnlinepvp++;
+        }
+    }
+    for (let i = 0; i < couchcoopData.length; i++) {
+        if (couchcoopData[i].genres.includes('Indie')) {
+            numIndieCouchcoop++;
+        }
+        else {
+            numNonindieCouchcoop++;
+        }
+    }
+    for (let i = 0; i < couchpvpData.length; i++) {
+        if (couchpvpData[i].genres.includes('Indie')) {
+            numIndieCouchpvp++;
+        }
+        else {
+            numNonindieCouchpvp++;
+        }
     }
 
-    leftTeam.append("rect")
+    let selectionsLabelLeft = [["Multiplayer (Choose me!)"], ["Cooperative (Choose me!)"], ["Online Co-op", "Online PvP"]];
+    let selectionsLabelRight = [["Non-multiplayer"], ["Competitive (Choose me!)"], ["Couch Co-op", "Couch PvP"]];
+    let selectionsLeft = [[multiplayerData], [cooperativeData], [onlinecoopData, onlinepvpData]];
+    let selectionsRight = [[nonmultiplayerData], [competitiveData], [couchcoopData, couchpvpData]];
+    let selectionsIndieLeft = [[numIndieMultiplayer], [numIndieCooperative], [numIndieOnlinecoop, numIndieOnlinepvp]];
+    let selectionsNonindieLeft = [[numNonindieMultiplayer], [numNonindieCooperative], [numNonindieOnlinecoop, numNonindieOnlinepvp]];
+    let selectionsIndieRight = [[numIndieNonmultiplayer], [numIndieCompetitive], [numIndieCouchcoop, numIndieCouchpvp]];
+    let selectionsNonindieRight = [[numNonindieNonmultiplayer], [numNonindieCompetitive], [numNonindieCouchcoop, numNonindieCouchpvp]];
+
+    let leftPlayer = leftSide.selectAll("image")
+        .data(selectionsLeft[selection1][selection2]);
+
+    // Enter
+    leftPlayer.enter().append("image")
+        .attr("class", "left-player")
+        .merge(leftPlayer)
+        .attr("x", (d, index) => (index % 30) * width / 60 - 15)
+        .attr("width", 16)
+        .attr("height", 16)
+        .attr("xlink:href", d => {
+            if (d.genres.includes('Indie'))
+                return icons[0]
+            else
+                return icons[1]
+        })
+        .attr("y", 0)
+        .transition()
+        .duration(1000)
+        .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top);
+
+    leftPlayer.exit().remove();
+
+    let rightPlayer = rightSide.selectAll("image")
+        .data(selectionsRight[selection1][selection2]);
+
+    // Enter
+    rightPlayer.enter().append("image")
+        .attr("class", "right-player")
+        .merge(rightPlayer)
+        .attr("x", (d, index) => (index % 30) * width / 60 + width / 2 + 15)
+        .attr("width", 16)
+        .attr("height", 16)
+        .attr("xlink:href", d => {
+            if (d.genres.includes('Indie'))
+                return icons[0]
+            else
+                return icons[1]
+        })
+        .attr("y", 0)
+        .transition()
+        .duration(1000)
+        .attr("y", (d, index) => Math.floor(index / 30) * height / 30 + margin.top);
+
+    rightPlayer.exit().remove();
+
+    let leftRect = leftSide.append("rect")
         .attr("width", width / 2)
         .attr("height", height / 2)
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".left-player")
-                .transition()
-                .duration(200)
                 .attr("width", 20)
                 .attr("height", 20);
 
             tooltip
                 .style("opacity", 1)
-                .style("left", event.pageX - 50 + "px")
+                .style("left", event.pageX - 200 + "px")
                 .style("top", event.pageY - 500 + "px")
                 .html(`
                     <div style="border: black; border-radius: 1px; background: #2a2a3e; padding: 10px">
-                        <h4> Number of indie games: ${selectionsIndieLeft[selection]}</h4>      
-                        <h4> Number of non-indie games: ${selectionsNonindieLeft[selection]}</h4>                      
+                        <h4> Number of indie games: ${selectionsIndieLeft[selection1][selection2]}</h4>      
+                        <h4> Number of non-indie games: ${selectionsNonindieLeft[selection1][selection2]}</h4>                      
                     </div>`);
         })
         .on("mouseout", function () {
             d3.selectAll(".left-player")
-                .transition()
-                .duration(200)
                 .attr("width", 16)
                 .attr("height", 16);
 
@@ -292,73 +336,71 @@ function updateVisualization(selection) {
                 .style("left", 0)
                 .style("top", 0)
                 .html(``);
+            
+            if (selection1 < 2) {
+                d3.selectAll(".left-side-text")
+                    .text(selectionsLabelLeft[selection1 + 1][selection2])
 
-            d3.selectAll(".left-team-text")
-                .transition()
-                .duration(1000)
-                .text("Cooperative")
+                d3.selectAll(".right-side-text")
+                    .text(selectionsLabelRight[selection1 + 1][selection2])
+                        
+                svg.selectAll(".heading")
+                    .text("Pick your side! (click on the sides that say '(Choose me!)' to explore more)")
 
-            d3.selectAll(".right-team-text")
-                .transition()
-                .duration(1000)
-                .text("Competitive")
-
-            // Add back option to go back to previous selection
-            svg.append("text")
-                .attr("class", "back")
-                .attr("x", width - 50)
-                .attr("y", height - 50)
-                .text("Back")
-                .attr("fill", "#66c0f4")
-                .attr("font-family", "ui-monospace, 'Courier New', monospace")
-                .attr("font-size", "14px")
-                .attr("cursor", "pointer")
-                .on("click", function () {
-                    d3.selectAll(".left-team-text")
-                        .transition()
-                        .duration(1000)
-                        .text("Multiplayer (Choose me!)")
-                    
-                    d3.selectAll(".right-team-text")
-                        .transition()
-                        .duration(1000)
-                        .text("Non-multiplayer")
-
-                    updateVisualization(0)
-
-                    d3.selectAll(".back")
-                        .style("opacity", 0)
-                })
-                    
-            updateVisualization(1);
+                updateVisualization(selection1 + 1, selection2, sortIndex);
+            }
+            else {
+                svg.selectAll(".heading")
+                    .text("Side chosen: " + selectionsLabelLeft[selection1][selection2])
+            }
         });
 
-    rightTeam.append("rect")
+    svg.selectAll(".back")
+        .on("click", function () {
+            if (selection1 > 0) {
+                d3.selectAll(".left-side-text")
+                    .text(selectionsLabelLeft[selection1 - 1][0])
+                
+                d3.selectAll(".right-side-text")
+                    .text(selectionsLabelRight[selection1 - 1][0])
+
+                svg.selectAll(".heading")
+                    .text("Pick your side! (click on the sides that say '(Choose me!)' to explore more)")
+
+                updateVisualization(selection1 - 1, 0, sortIndex)
+            }
+        });
+
+    if (selection1 == 0) {
+        svg.selectAll(".back").style("opacity", 0);
+
+    }
+    else {
+        svg.selectAll(".back").style("opacity", 1);
+    }
+    
+    let rightRect = rightSide.append("rect")
         .attr("x", width / 2)
         .attr("width", width / 2)
         .attr("height", height / 2)
         .style("opacity", 0)
         .on("mousemove", function (event, d) {            
             d3.selectAll(".right-player")
-                .transition()
-                .duration(200)
                 .attr("width", 20)
                 .attr("height", 20);
 
             tooltip
                 .style("opacity", 1)
-                .style("left", event.pageX - 50 + "px")
+                .style("left", event.pageX - 200 + "px")
                 .style("top", event.pageY - 500 + "px")
                 .html(`
                     <div style="border: black; border-radius: 1px; background: #2a2a3e; padding: 10px">
-                        <h4> Number of indie games: ${selectionsIndieRight[selection]}</h4>      
-                        <h4> Number of non-indie games: ${selectionsNonindieRight[selection]}</h4>                      
+                        <h4> Number of indie games: ${selectionsIndieRight[selection1][selection2]}</h4>      
+                        <h4> Number of non-indie games: ${selectionsNonindieRight[selection1][selection2]}</h4>                      
                     </div>`);
         })
         .on("mouseout", function () {
             d3.selectAll(".right-player")
-                .transition()
-                .duration(200)
                 .attr("width", 16)
                 .attr("height", 16);
             
@@ -367,5 +409,63 @@ function updateVisualization(selection) {
                 .style("left", 0)
                 .style("top", 0)
                 .html(``);
+        })
+        .on("click", function (d) {
+            tooltip
+                .style("opacity", 0)
+                .style("left", 0)
+                .style("top", 0)
+                .html(``);
+
+            if (selection1 == 1) {
+                d3.selectAll(".left-side-text")
+                    .text(selectionsLabelLeft[selection1 + 1][1])
+
+                d3.selectAll(".right-side-text")
+                    .text(selectionsLabelRight[selection1 + 1][1])
+                        
+                svg.selectAll(".heading")
+                    .text("Pick your side! (click on the sides that say '(Choose me!)' to explore more)")
+                
+                updateVisualization(selection1 + 1, 1, sortIndex);
+            }
+            else {
+                svg.selectAll(".heading")
+                    .text("Side chosen: " + selectionsLabelRight[selection1][selection2])
+            }
         });
+
+    svg.selectAll(".sort")
+        .on("click", function (d) {
+            if (sortIndex < 2) {
+                updateVisualization(selection1, selection2, sortIndex + 1)
+            }
+            else {
+                updateVisualization(selection1, selection2, 0)
+            }
+        });
+}
+
+function compare1(a, b) {
+    if (a.genres.includes('Indie') && !b.genres.includes('Indie')) {
+        return -1
+    }
+    if (!a.genres.includes('Indie') && b.genres.includes('Indie')) {
+        return 1
+    }
+    else {
+        return 0
+    }
+}
+
+function compare2(a, b) {
+    if (!a.genres.includes('Indie') && b.genres.includes('Indie')) {
+        return -1
+    }
+    if (a.genres.includes('Indie') && !b.genres.includes('Indie')) {
+        return 1
+    }
+    else {
+        return 0
+    }
 }
