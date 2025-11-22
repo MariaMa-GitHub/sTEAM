@@ -392,7 +392,7 @@
             </div>
         </div>
 
-<!--        <div class="hint">Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to score & rank</div>-->
+        <!--        <div class="hint">Arrow Keys / WASD · Hover bubbles for details · Eat Action/Indie to score & rank</div>-->
 
         <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
 
@@ -615,7 +615,6 @@
                     const reviews = row.querySelector('.rank-reviews')?.textContent ?? '';
                     const price = row.querySelector('.rank-price')?.textContent ?? '';
 
-                    // tooltip 内容（根据排行榜类型自动显示）
                     let html = `<b>${name}</b><br>`;
                     if (price) html += `Price: ${price}<br>`;
                     if (rating) html += `Rating: ${rating}<br>`;
@@ -635,10 +634,9 @@
             });
         }
 
-
         //--------------------------------------------------
-// Rating Progression Trend Line
-//--------------------------------------------------
+        // Rating Progression Trend Line
+        //--------------------------------------------------
         const ratingSvg = d3.select("#trendChart");
         const rW = 280, rH = 300;
         const rMargin = {l:35, r:10, t:15, b:30};
@@ -848,8 +846,6 @@
                 const reviews = +d.total_reviews || 0;
                 if (reviews <= 0) continue;
                 if (reviews <= 10) continue;
-
-
 
                 // parse price
                 let price = +d["price_initial (USD)"];
