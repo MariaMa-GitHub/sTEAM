@@ -244,11 +244,16 @@
         }
 
         .board-empty {
-            font-size:8px;
+            font-family:"Press Start 2P", monospace;
+            font-size:10px;
+            font-weight:400;
             color:var(--muted);
             opacity:0.9;
             line-height:1.4;
+            text-transform:uppercase;
         }
+
+
 
         .rank-row {
             display:flex;
@@ -319,6 +324,15 @@
             white-space: nowrap;
             z-index: 99999;
         }
+        .title-hint {
+            color: #ffdb6a;
+            font-family: "Press Start 2P", monospace;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: -10px;
+            margin-bottom: 18px;
+        }
 
         .cat-dot {
             width:8px;
@@ -344,9 +358,11 @@
 <body>
 <div id="wrap">
     <h1 class="main-title pix">Discovering Value: Steam Price vs Review Trends</h1>
-    <div class="title-hint" style="color:#ffd24a; font-size:16px; font-weight:700;">
+    <div class="title-hint">
         Use Arrow Keys or WASD to start and move · Eat bubbles to rank games and see average ratings!
     </div>
+
+
 
 
     <div class="frame">
@@ -387,12 +403,19 @@
             <!-- Right: RPG-style dual leaderboard -->
             <div id="sidePanel">
                 <div class="board" id="boardQualityBox">
-                    <div class="board-title pix">TOP RATED (EATEN)</div>
+                    <div class="board-title pix">
+                        TOP RATED (EATEN)
+                    </div>
+                    <div class="board-empty">Highest-rated games you've collected</div>
+
                     <div class="board-body" id="boardQuality"></div>
                 </div>
                 <div class="board" id="trendBox">
                     <div class="board-title pix">AVERAGE RATING</div>
+                    <div class="board-empty">Trend of average rating as you play</div>
+
                     <svg id="trendChart" width="280" height="320"></svg>
+
                 </div>
 
             </div>
