@@ -253,8 +253,6 @@
             text-transform:uppercase;
         }
 
-
-
         .rank-row {
             display:flex;
             align-items:center;
@@ -352,14 +350,69 @@
         .rank-rating { color:#f8f9ff; }
         .rank-reviews { min-width:32px; text-align:right; }
         .rank-price { min-width:40px; text-align:right; }
+        #game-wrap {
+            position: relative;
+            width: 640px;
+            height: 720px;
+        }
+
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(2px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: opacity .4s ease;
+        }
+
+        .start-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 40px 50px;
+            border-radius: 12px;
+            border: 2px solid #ffdb6a;
+            background: rgba(0,0,0,0.45);
+            box-shadow:
+                    0 0 20px rgba(255,210,74,0.5),
+                    0 0 40px rgba(255,210,74,0.2);
+            animation: floaty 2s infinite ease-in-out;
+        }
+
+        .start-text {
+            font-size: 20px;
+            color: #ffe89a;
+            text-shadow:
+                    0 0 8px rgba(255,255,200,0.7),
+                    0 0 18px rgba(255,210,74,1);
+        }
+
+        .start-icon {
+            font-size: 50px;
+            margin-top: -8px;
+            color: #ffdb6a;
+            text-shadow:
+                    0 0 8px rgba(255,255,200,0.9),
+                    0 0 22px rgba(255,210,74,1);
+        }
+
+        @keyframes floaty {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
 
     </style>
 </head>
 <body>
+
 <div id="wrap">
     <h1 class="main-title pix">Discovering Value: Steam Price vs Review Trends</h1>
     <div class="title-hint">
-        Use Arrow Keys or WASD to start and move · Eat bubbles to rank games and see average ratings!
+        Use Arrow Keys or WASD to move · Eat bubbles to rank games and see average ratings!
     </div>
 
 
@@ -397,21 +450,27 @@
         <div class="legend">Action = <span style="color:var(--action);font-weight:800">■</span> · Indie = <span style="color:var(--indie);font-weight:800">■</span></div>
 
         <div class="row">
-            <!-- Left: Bubble plot (price vs positive %) -->
-            <svg id="game" viewBox="0 0 640 720"></svg>
+            <div id="game-wrap">
+                <div id="start-overlay">
+                    <div class="start-inner">
+                        <div class="start-icon pix">▶</div>
+                    </div>
+                </div>
 
+                <svg id="game" viewBox="0 0 640 720"></svg>
+            </div>
             <!-- Right: RPG-style dual leaderboard -->
             <div id="sidePanel">
                 <div class="board" id="boardQualityBox">
                     <div class="board-title pix">
-                        TOP RATED (EATEN)
+                        TOP RATED(EATEN)
                     </div>
                     <div class="board-empty">Highest-rated games you've collected</div>
 
                     <div class="board-body" id="boardQuality"></div>
                 </div>
                 <div class="board" id="trendBox">
-                    <div class="board-title pix">AVERAGE RATING</div>
+                    <div class="board-title pix">AVERAGE RATING(EATEN)</div>
                     <div class="board-empty">Trend of average rating as you play</div>
 
                     <svg id="trendChart" width="280" height="320"></svg>
@@ -550,7 +609,28 @@
         // === Eaten buckets for rankings ===
         const eatenBy = { Action: [], Indie: [] };
 
+        function toggleEmptyMessages() {
+            const eatenCount = eatenBy.Action.length + eatenBy.Indie.length;
+
+            // Quality board empty message
+            const emptyQuality = document.querySelector('#boardQualityBox .board-empty');
+
+            // Trend board empty message
+            const emptyTrend = document.querySelector('#trendBox .board-empty');
+
+            if (eatenCount === 0) {
+                emptyQuality.style.display = 'block';
+                emptyTrend.style.display = 'block';
+            } else {
+                emptyQuality.style.display = 'none';
+                emptyTrend.style.display = 'none';
+            }
+        }
+
+
         function updateRanking(){
+            toggleEmptyMessages();
+
             const eaten = [...eatenBy.Action, ...eatenBy.Indie];
 
             const byQuality = [...eaten]
@@ -639,7 +719,7 @@
         //--------------------------------------------------
         const ratingSvg = d3.select("#trendChart");
         const rW = 280, rH = 300;
-        const rMargin = {l:35, r:10, t:15, b:30};
+        const rMargin = {l:35, r:10, t:15, b:40};
         const rInnerW = rW - rMargin.l - rMargin.r;
         const rInnerH = rH - rMargin.t - rMargin.b;
 
@@ -649,6 +729,8 @@
             .attr("transform", `translate(${rMargin.l},${rMargin.t})`);
 
         function updateRatingProgression() {
+            toggleEmptyMessages();
+
             const plot = ratingSvg.select("#ratingPlot");
             plot.selectAll("*").remove();
 
@@ -692,6 +774,26 @@
                 .call(g => g.selectAll("text").attr("fill", "#b8c4e6"))
                 .call(g => g.selectAll("path,line").attr("stroke", "#2a3758"));
 
+            // axis labels
+            plot.append("text")
+                .attr("x", rInnerW / 2)
+                .attr("y", rInnerH + 28)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#b8c4e6")
+                .attr("class", "pix")
+                .attr("font-size", 10)
+                .text("NUMBER OF GAMES EATEN");
+
+            plot.append("text")
+                .attr("x", -rInnerH / 2)
+                .attr("y", -25)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#b8c4e6")
+                .attr("class", "pix")
+                .attr("font-size", 10)
+                .attr("transform", "rotate(-90)")
+                .text("AVERAGE RATING (%)");
+
             const tooltipT = document.getElementById("trendTooltip");
 
             // ---- Line generator ----
@@ -723,6 +825,31 @@
                     .style("filter", "url(#glowPink)")
                     .on("mousemove", (ev) => {
                         tooltipT.innerHTML = `<b style="color:var(--action)">Action</b><br>${lastA.avgRating.toFixed(1)}%`;
+                        tooltipT.style.left = ev.pageX + 14 + "px";
+                        tooltipT.style.top = ev.pageY + 14 + "px";
+                        tooltipT.style.opacity = 1;
+                        tooltipT.style.transform = "translateY(0)";
+                    })
+                    .on("mouseleave", () => {
+                        tooltipT.style.opacity = 0;
+                        tooltipT.style.transform = "translateY(-6px)";
+                    });
+
+                plot.append("path")
+                    .datum(progAction)
+                    .attr("fill", "none")
+                    .attr("stroke", "transparent")
+                    .attr("stroke-width", 12)
+                    .attr("d", line)
+                    .style("cursor", "crosshair")
+                    .on("mousemove", (ev) => {
+                        const [mx] = d3.pointer(ev);
+                        const xVal = x.invert(mx);
+                        const idx = Math.max(1, Math.min(progAction.length, Math.round(xVal))) - 1;
+                        const d = progAction[idx];
+
+                        tooltipT.innerHTML =
+                            `<b style="color:var(--action)">Action</b><br>${d.avgRating.toFixed(1)}%`;
                         tooltipT.style.left = ev.pageX + 14 + "px";
                         tooltipT.style.top = ev.pageY + 14 + "px";
                         tooltipT.style.opacity = 1;
@@ -766,6 +893,30 @@
                         tooltipT.style.opacity = 0;
                         tooltipT.style.transform = "translateY(-6px)";
                     });
+                plot.append("path")
+                    .datum(progIndie)
+                    .attr("fill", "none")
+                    .attr("stroke", "transparent")
+                    .attr("stroke-width", 12)
+                    .attr("d", line)
+                    .style("cursor", "crosshair")
+                    .on("mousemove", (ev) => {
+                        const [mx] = d3.pointer(ev);
+                        const xVal = x.invert(mx);
+                        const idx = Math.max(1, Math.min(progIndie.length, Math.round(xVal))) - 1;
+                        const d = progIndie[idx];
+
+                        tooltipT.innerHTML =
+                            `<b style="color:var(--indie)">Indie</b><br>${d.avgRating.toFixed(1)}%`;
+                        tooltipT.style.left = ev.pageX + 14 + "px";
+                        tooltipT.style.top = ev.pageY + 14 + "px";
+                        tooltipT.style.opacity = 1;
+                        tooltipT.style.transform = "translateY(0)";
+                    })
+                    .on("mouseleave", () => {
+                        tooltipT.style.opacity = 0;
+                        tooltipT.style.transform = "translateY(-6px)";
+                    });
             }
         }
 
@@ -793,7 +944,7 @@
             const nd = dirs[e.key];
             if (nd) {
                 pac.dir = nd;
-                started = true;
+                // started = true;
             }
         });
 
@@ -1118,8 +1269,18 @@
         // === Minimal runtime self-tests (console) ===
         console.assert(document.querySelector('#game'), '[Self-test] scatter svg exists');
 
+        // === Press Start Overlay ===
+        const overlay = document.getElementById("start-overlay");
+
+        overlay.addEventListener("click", () => {
+            overlay.style.opacity = 0;
+            setTimeout(() => {
+                overlay.remove();
+                started = true;
+            }, 400);
+        });
+
     })();
 </script>
 </body>
 </html>
-
