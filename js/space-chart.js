@@ -1,6 +1,7 @@
 let spacechart;
 let minPlayers = 20;
 
+// Data loading, doing this here to avoid a merge conflict
 loadPlayerCountTable();
 
 function loadPlayerCountTable() {
@@ -274,9 +275,20 @@ class SpaceChart {
       .attr("paint-order", "stroke")
       .text((d) => d);
 
+    vis.tooltipImage = vis.svg
+      .append("image")
+      .attr("href", "assets/arrowkeys.png")
+      .attr("width", 200)
+      .attr("height", 200)
+      .attr("x", (spaceWidth / 7) * 6)
+      .attr("y", (spaceHeight / 4) * 3);
+
     vis.tooltipGroup = vis.svg
       .append("g")
-      .attr("transform", `translate(${spaceWidth / 2}, ${spaceHeight - 40})`);
+      .attr(
+        "transform",
+        `translate(${spaceWidth / 2}, ${(spaceHeight / 4) * 3})`
+      );
 
     vis.tooltipBg = vis.tooltipGroup
       .append("rect")
@@ -296,6 +308,67 @@ class SpaceChart {
       .attr("font-family", "sans-serif")
       .attr("font-size", "20px");
 
+    // legend
+    const legend = vis.svg
+      .append("g")
+      .attr(
+        "transform",
+        `translate(${0 + spaceMargin.left}, ${(spaceHeight / 4) * 3})`
+      );
+
+    legend
+      .append("rect")
+      .attr("x", -10) // add a little padding
+      .attr("y", -30)
+      .attr("width", 320)
+      .attr("height", 220)
+      .attr("rx", 10) // rounded corners
+      .attr("ry", 10)
+      .attr("fill", "rgba(0,0,0,0.7)"); // semi-transparent dark background
+
+    // --- Color 1 ---
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", "2em")
+      .attr("height", "2em")
+      .attr("fill", `hsl(320, 94%, 57%)`); // replace with your actual color
+
+    legend
+      .append("text")
+      .attr("x", 40)
+      .attr("y", 30)
+      .attr("font-size", "4em")
+      .attr("fill", "#fff")
+      .text("AAA");
+
+    // --- Color 2 ---
+    legend
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 70)
+      .attr("width", "2em")
+      .attr("height", "2em")
+      .attr("fill", `hsl(163, 97%, 41%)`); // replace with your actual color
+
+    legend
+      .append("text")
+      .attr("x", 40)
+      .attr("y", 104)
+      .attr("font-size", "4em")
+      .attr("fill", "#fff")
+      .text("Indie");
+
+    legend
+      .append("text")
+      .attr("x", 0)
+      .attr("y", 144)
+      .attr("font-size", "1.5em")
+      .attr("fill", "#fff")
+      .text("More opaque = more popular");
+
+    // draw teh spaceship
     vis.spaceshipGraphic = vis.svg
       .append("polygon")
       .attr("points", "0,-20 12,10 0,5 -12,10")
@@ -312,7 +385,7 @@ class SpaceChart {
 
     const handleMouseLeave = () => {
       isMouseOverVisualization = false;
-      Object.keys(pressed).forEach(key => {
+      Object.keys(pressed).forEach((key) => {
         pressed[key] = false;
       });
       spaceship.vx = 0;
@@ -327,14 +400,20 @@ class SpaceChart {
     vis.svg.attr("tabindex", "0").style("outline", "none");
 
     d3.select("body").on("keydown", (event) => {
-      if (isMouseOverVisualization && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      if (
+        isMouseOverVisualization &&
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+      ) {
         event.preventDefault();
         pressed[event.key] = true;
       }
     });
 
     d3.select("body").on("keyup", (event) => {
-      if (isMouseOverVisualization && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      if (
+        isMouseOverVisualization &&
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+      ) {
         event.preventDefault();
         if (holdTime[event.key] !== undefined) {
           holdTime[event.key] = 0;

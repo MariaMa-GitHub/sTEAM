@@ -738,6 +738,34 @@
             </div>
           </div>
         </div>
+    
+
+        <!-- Chapter 2: The Game Landscape -->
+        <div class="chapter-container" id="chapter-2">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="pacman.html"
+                title="Pac-Man Steam Game Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chapter 3: The Price War -->
+        <div class="chapter-container" id="chapter-3">
+          <div class="chapter-header"></div>
+          <div class="viz-content">
+            <div class="viz-panel">
+              <iframe
+                src="battle.html"
+                title="Peak Battle Visualization"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
 
         <!-- Chapter 4: The Social Layer -->
         <div class="chapter-container" id="chapter-4">
@@ -747,7 +775,7 @@
               <div
                 class="viz-panel-content"
                 id="game-lobby"
-                style="height: 100%; width: 100%; min-height: 700px"
+                style="height: 100%; width: 100%; min-height: 700px; text-align:center"
               ></div>
             </div>
           </div>
@@ -778,6 +806,7 @@
     <script src="js/indie-vs-aaa.js"></script>
 
     <script>
+    // Chapter Navigation
       let currentChapter = 1;
       const totalChapters = 5;
 
@@ -810,6 +839,7 @@
       };
 
       function showChapter(chapterNum) {
+        // Hide all chapters
         document
           .querySelectorAll(".chapter-container")
           .forEach((el) => el.classList.remove("active"));
@@ -817,11 +847,13 @@
           .querySelectorAll(".chapter-btn")
           .forEach((el) => el.classList.remove("active"));
 
+        // Show selected chapter
         const chapter = document.getElementById(`chapter-${chapterNum}`);
         const btn = document.querySelector(`[data-chapter="${chapterNum}"]`);
         if (chapter) chapter.classList.add("active");
         if (btn) btn.classList.add("active");
 
+        // Update header content
         if (chapterData[chapterNum]) {
           document.getElementById("chapter-title").textContent =
             chapterData[chapterNum].title;
@@ -829,14 +861,17 @@
             chapterData[chapterNum].description;
         }
 
+        // Update level indicator
         currentChapter = chapterNum;
         document.getElementById("current-level").textContent = chapterNum;
 
+        // Update button states
         document.getElementById("prev-btn").disabled = chapterNum === 1;
         document.getElementById("next-btn").disabled =
           chapterNum === totalChapters;
       }
 
+    // Button navigation
       document.getElementById("next-btn").addEventListener("click", () => {
         if (currentChapter < totalChapters) {
           showChapter(currentChapter + 1);
@@ -849,6 +884,7 @@
         }
       });
 
+    // Chapter selector buttons
       document.querySelectorAll(".chapter-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           const chapterNum = parseInt(btn.dataset.chapter);
@@ -856,6 +892,7 @@
         });
       });
 
+    // Keyboard navigation
       document.addEventListener("keydown", (e) => {
         if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
           if (currentChapter < totalChapters) {
@@ -876,6 +913,7 @@
         }
       });
 
+    // Initialize on load
       showChapter(1);
     </script>
   </body>
