@@ -6,7 +6,7 @@ let margin = {top: 20, right: 20, bottom: 20, left: 20};
 let width = 1200 - margin.left - margin.right;
 let height = 700 - margin.top - margin.bottom;
 
-const icons = ['./red-person.png', './blue-person.png'];
+const icons = ['./assets/red-person.png', './assets/blue-person.png'];
 
 let svg = d3.select("#game-lobby").append("svg")
     .attr("class", "main-lobby")
