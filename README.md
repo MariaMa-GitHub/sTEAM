@@ -1,7 +1,7 @@
 # sTEAM — Interactive Game Visualizations
 
 ## Project Overview
-sTEAM is an interactive data visualization project exploring various aspects of video games, including player behavior, game categories, and gameplay mechanics. The project consists of five interactive visualizations. Each visualization has its own dedicated webpage, and a combined overview of all five visualizations is also presented on the main index page.
+sTEAM is an interactive data visualization project exploring various aspects of video games, including player behavior, game categories, and gameplay mechanics. The project consists of five interactive visualizations. A combined overview of all visualizations is presented on the main index page.
 
 All visualizations were built using HTML, CSS, JavaScript, and the D3.js library.
 
