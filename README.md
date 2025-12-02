@@ -9,7 +9,7 @@ All visualizations were built using HTML, CSS, JavaScript, and the D3.js library
 Project Link: https://MariaMa-GitHub.github.io/sTEAM/
 
 ## Screencast Video
-# TODO
+[CSC316 Project Demo](https://youtu.be/HMfbZy1PrcQ)
 
 ## Repository Structure
 ````text
