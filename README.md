@@ -103,6 +103,9 @@ Displays a multi-dimensional game-related dataset as a space chart.
 ### Indie vs AAA Visualization (`indie-vs-aaa.html`)
 Compares indie and AAA games using visualized data.
 
+### Branching Category Division Visualization (`game-lobby.js`)
+Displays the division of indie and studio games for multiplayer and non-multiplayer (branching to other subcategories).
+
 ### Battle Visualization (`battle.html`)
 Illustrates battle mechanics and player interactions through interactive graphics.
 
